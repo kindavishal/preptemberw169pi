@@ -133,18 +133,19 @@ function defaultCaption(community) {
 
 📍 [Add your community name, date, venue & sign-up link here]
 
-We're making our first open-source contribution to Alpie-Core — 169Pi's open 32B, 4-bit reasoning model built in India. Come build with us.
+We're making our first open-source contribution with 169Pi — an open-source AI lab building the best local & offline first models out of India for the world! Come build with us.
 
 🧱 Make your first contribution with #GoodFirstAlpie
 ⭐ Star the repo · 🔀 open your first PR · 🌱 contribute to open source
 
-#GoodFirstAlpie #Preptember #Hacktoberfest #OpenSource #AlpieCore #169Pi`;
+#GoodFirstAlpie #Preptember #Hacktoberfest #OpenSource #169Pi`;
 }
 
 // Default, ready-to-paste image-generation prompt for external tools.
 function defaultFeaturePrompt(community) {
   const name = (community || 'our community').trim() || 'our community';
-  return `A bold, minimal hero banner celebrating ${name}'s first open-source contribution to Alpie-Core — 169Pi's 32B, 4-bit open reasoning model built in India. Center the community name "${name}" with subtle circuit-board and terminal motifs, a deep pine-teal and emerald palette (#134E4A, #10B981, #0284C7) on a warm parchment or dark navy background. Clean geometric sans-serif type, generous negative space, flat vector illustration style, crisp edges. Add a small tag reading "32B · 4-bit · Preptember 2026". No photorealism, no stock-photo people, no clutter. Aspect ratio 16:9.`;
+  const centerName = (community || '').trim() || '[your community]';
+  return `A bold, minimal hero banner celebrating ${name}'s first open-source contribution with 169Pi — an open-source AI lab building the best local & offline first models out of India for the world! Center the community name "${centerName}" with subtle circuit-board and terminal motifs, a deep pine-teal and emerald palette (#134E4A, #10B981, #0284C7) on a warm parchment or dark navy background. Clean geometric sans-serif type, generous negative space, flat vector illustration style, crisp edges. Add a small tag reading "Open Source · Preptember 2026". No photorealism, no stock-photo people, no clutter. Aspect ratio 16:9.`;
 }
 
 export default function Organizers() {
@@ -282,7 +283,7 @@ export default function Organizers() {
     setPromptBusy(true);
     setPromptError('');
     const name = (community || 'our community').trim() || 'our community';
-    const ask = `Write a single, ready-to-paste image-generation prompt (for tools like Midjourney, DALL·E or Ideogram) for a graphic celebrating my community "${name}" making its first contribution to Alpie-Core during Preptember. Reflect Alpie-Core's identity (32B, 4-bit open reasoning model built in India) and 169pi's teal/emerald palette. Keep it to one vivid but concrete paragraph and end with style and aspect-ratio tags. Return only the prompt text — no preamble.`;
+    const ask = `Write a single, ready-to-paste image-generation prompt (for tools like Midjourney, DALL·E or Ideogram) for a graphic celebrating my community "${name}" making its first open-source contribution with 169Pi during Preptember. Reflect 169Pi's identity (an open-source AI lab building the best local & offline first models out of India for the world!) and its teal/emerald palette. Keep it to one vivid but concrete paragraph and end with style and aspect-ratio tags. Return only the prompt text — no preamble.`;
     try {
       const res = await fetch('/api/alpie', {
         method: 'POST',
@@ -529,6 +530,7 @@ export default function Organizers() {
             </div>
           </div>
         </section>
+
       </main>
 
       <SiteFooter />

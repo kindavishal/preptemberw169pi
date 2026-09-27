@@ -47,6 +47,13 @@ const STEPS = [
     guide: 'When it is merged, your entry is live on the 169pi org profile and 169pi ships you swag. You just made your first open-source contribution.' },
 ];
 
+// Default, ready-to-paste image prompt for a contributor's README "brick".
+// Keeps [bracketed placeholders] so each person can make the tile their own
+// before generating it on an external tool and pasting it into their entry.
+function defaultEntryPrompt() {
+  return `A small square "brick" tile for the 169Pi open-source contributor wall, representing [your name or GitHub handle]. Build it around a personal motif — [a symbol that represents you, e.g. a rocket, a chai cup, a terminal cursor] — that nods to something real about 169Pi (local & offline-first AI models built in India). Use 169Pi's teal and emerald palette (#134E4A, #10B981, #0284C7) with [your accent colour] as a single highlight. Add a tiny "#GoodFirstAlpie" tag and a small label reading "[your name]". Minimal and crisp, generous negative space, no photorealism, no clutter, no misspelled text. Flat vector illustration style, square 1:1 aspect ratio, sized for a README contributor wall.`;
+}
+
 // Renders guide text that contains <term:key>label</term:key> markers as inline
 // tooltip terms, leaving the rest as plain text.
 function renderGuide(text) {
@@ -257,6 +264,13 @@ export default function Home() {
 
   const [glossaryOpen, setGlossaryOpen] = useState(false);
 
+  // Step 04 entry-image prompt generator (personal README "brick")
+  const [entry, setEntry] = useState('');
+  const [entryTouched, setEntryTouched] = useState(false);
+  const [entryBusy, setEntryBusy] = useState(false);
+  const [entryError, setEntryError] = useState('');
+  const [copiedEntry, setCopiedEntry] = useState(false);
+
   const cd = useCountdown(NEXT_MERGE_DATE);
   const hereNow = usePresence();
 
@@ -383,6 +397,51 @@ export default function Home() {
     setUser(null);
     setGhStatus(null);
   }
+
+  async function copyText(text, setFlag) {
+    try {
+      await navigator.clipboard.writeText(text);
+    } catch {
+      try {
+        const ta = document.createElement('textarea');
+        ta.value = text;
+        ta.style.position = 'fixed';
+        ta.style.opacity = '0';
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand('copy');
+        document.body.removeChild(ta);
+      } catch {}
+    }
+    setFlag(true);
+    setTimeout(() => setFlag(false), 1800);
+  }
+
+  async function generateEntryPrompt() {
+    setEntryBusy(true);
+    setEntryError('');
+    const ask = `Write a single, ready-to-paste image-generation prompt (for tools like Midjourney, DALL·E or Ideogram) for a small square "brick" tile that I'll generate and add to the 169Pi open-source README contributor wall as my first open-source contribution during Preptember. Keep bracketed placeholders such as [your name], [your motif] and [your accent colour] so I can make it my own before generating. Reflect 169Pi's identity (an open-source AI lab building the best local & offline-first models out of India for the world). Keep it to one vivid but concrete paragraph and end with style and aspect-ratio tags. Return only the prompt text — keep the bracketed placeholders, no preamble.`;
+    try {
+      const res = await fetch('/api/alpie', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ mode: 'chat', messages: [{ role: 'user', content: ask }] }),
+      });
+      const j = await res.json();
+      if (!res.ok) {
+        setEntryError(j.error || 'Alpie is unavailable right now — the template below still works.');
+      } else if (j.content) {
+        setEntry(j.content.trim());
+        setEntryTouched(true);
+      }
+    } catch {
+      setEntryError('Could not reach Alpie — the template below still works.');
+    } finally {
+      setEntryBusy(false);
+    }
+  }
+
+  const entryPrompt = entryTouched ? entry : defaultEntryPrompt();
 
   const total = STEPS.length;
   const count = STEPS.filter((s) => done[s.id]).length;
@@ -794,6 +853,33 @@ export default function Home() {
                       {isOpen && (
                         <div className="step-guide">
                           <div>{renderGuide(s.guide)}</div>
+                          {s.id === 'add' && (
+                            <div className="prompt-box">
+                              <div className="prompt-box-head">
+                                <span className="prompt-box-title"><span className="material-symbols-outlined">palette</span>Make your entry image</span>
+                                <div className="prompt-box-actions">
+                                  <button type="button" className="btn-ghost btn-sm" onClick={generateEntryPrompt} disabled={entryBusy}>
+                                    <span className="material-symbols-outlined">{entryBusy ? 'hourglass_top' : 'auto_awesome'}</span>
+                                    {entryBusy ? 'Asking Alpie…' : 'Tailor with Alpie'}
+                                  </button>
+                                  <button type="button" className="btn-solid btn-sm" onClick={() => copyText(entryPrompt, setCopiedEntry)}>
+                                    <span className="material-symbols-outlined">content_copy</span>{copiedEntry ? 'Copied!' : 'Copy prompt'}
+                                  </button>
+                                </div>
+                              </div>
+                              <textarea
+                                className="prompt-text"
+                                value={entryPrompt}
+                                onChange={(e) => { setEntry(e.target.value); setEntryTouched(true); }}
+                                rows={7}
+                                aria-label="Entry image generation prompt"
+                              />
+                              {entryError && <span className="canvas-error">{entryError}</span>}
+                              <span className="canvas-help">
+                                Fill in the [bracketed placeholders] to make it yours, tailor it with Alpie, then generate the image on a tool like Midjourney, DALL·E or Ideogram — and paste the result into your entry below.
+                              </span>
+                            </div>
+                          )}
                           {s.cmd && <div className="cmd">{s.cmd}</div>}
                           {s.mock && (
                             <div className="step-mock">
