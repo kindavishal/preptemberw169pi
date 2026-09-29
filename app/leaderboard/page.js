@@ -155,6 +155,15 @@ export default function LeaderboardPage() {
           </section>
         )}
 
+        {!error && data?.stale && (
+          <section className="section">
+            <div className="lb-stale">
+              <span className="material-symbols-outlined">history</span>
+              GitHub is rate-limiting us right now — showing the last known standings. They&apos;ll refresh automatically.
+            </div>
+          </section>
+        )}
+
         <section className="section lb-grid">
           {/* Leaderboard */}
           <div className="lb-main">

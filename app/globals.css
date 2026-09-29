@@ -1412,3 +1412,9 @@ h1.hero-h .accent {
 
 .lb-verified { display: inline-flex; vertical-align: middle; margin-left: 5px; color: var(--cyan); }
 .lb-verified .material-symbols-outlined { font-size: 15px; }
+
+.lb-stale {
+  display: flex; align-items: center; gap: 8px; padding: 11px 16px; border-radius: 12px;
+  background: #fdf6e7; border: 1px solid #f0dcae; color: #8a6415; font-size: 13px;
+}
+.lb-stale .material-symbols-outlined { font-size: 18px; }

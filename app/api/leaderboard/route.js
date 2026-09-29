@@ -157,7 +157,7 @@ export async function GET() {
   const token = process.env.GITHUB_TOKEN || null;
 
   if (cache.data && Date.now() - cache.at < CACHE_TTL_MS) {
-    return NextResponse.json({ ...cache.data, cached: true });
+    return NextResponse.json({ ...cache.data, cached: true, stale: false });
   }
 
   const owner = process.env.GITHUB_PROFILE_OWNER || process.env.GITHUB_STATS_OWNER || '169Pi';
@@ -190,6 +190,13 @@ export async function GET() {
     recentPulls = Array.isArray(j) ? j : [];
   } else {
     errors.push({ endpoint: 'recent-prs', status: recentRes.status });
+  }
+
+  // If GitHub blanked us (rate limit / outage) and we have a previous good
+  // result, serve THAT marked stale rather than an empty board. Without a token
+  // the unauthenticated limit is only 60/hr, so this is a real path in prod.
+  if (!wallRes.ok && !openRes.ok && cache.data) {
+    return NextResponse.json({ ...cache.data, cached: true, stale: true, staleErrors: errors });
   }
 
   // Avatars aren't in the wall, so collect them from the PR payloads we do have.
@@ -343,5 +350,5 @@ export async function GET() {
     cache = { at: Date.now(), data };
   }
 
-  return NextResponse.json({ ...data, cached: false });
+  return NextResponse.json({ ...data, cached: false, stale: false });
 }
