@@ -47,26 +47,71 @@ function isHuman(u) {
   return !BOT_LOGINS.has(login);
 }
 
+// Placeholder / junk values people leave in a `Club:` line (empty PR
+// templates, "TODO", etc.). Compared against the canonical key so casing and
+// punctuation don't matter.
+const JUNK_CLUB_KEYS = new Set([
+  'none', 'na', 'n a', 'nil', 'null', 'tbd', 'todo', 'test', 'testing',
+  'example', 'sample', 'xxx', 'your club', 'your club name', 'club', 'club name',
+  'my club', 'community', 'your community', 'unknown', 'foo', 'bar', 'asdf',
+]);
+
+// GitHub reserved paths that look like `github.com/<word>` but are not user
+// profiles — must never be mistaken for a contributor handle.
+const RESERVED_GH_PATHS = new Set([
+  'orgs', 'sponsors', 'apps', 'marketplace', 'settings', 'notifications',
+  'features', 'topics', 'collections', 'trending', 'about', 'pricing', 'team',
+  'enterprise', 'login', 'join', 'new', 'search', 'explore', 'pulls', 'issues',
+  'watching', 'dashboard', 'stars', 'contact', 'security', 'readme',
+]);
+
+// Fold a club name to a canonical key so trivial variations — casing, extra
+// spaces, hyphens/punctuation, and accents — all land in the SAME bucket.
+// "IIT-Delhi OSS Club", "IIT Delhi OSS Club" and "iit  delhi oss club" match.
+function clubKey(name) {
+  return String(name)
+    .normalize('NFKD')
+    .replace(/[̀-ͯ]/g, '') // strip combining accent marks
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, ' ')     // punctuation/hyphens -> space
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
 // Pull a `Club: <name>` declaration out of free text (a PR body or a wall
 // entry). Tolerant of leading markdown (>, *, _, #, whitespace) and a few
-// separators, and strips trailing markdown/emphasis from the captured name.
+// separators, strips trailing markdown/emphasis, and rejects junk placeholders.
 function parseClub(text) {
   if (!text) return null;
   const m = text.match(/(?:^|\n)[>#\s*_`-]*club\s*[:：\-–—]\s*([^\n]+)/i);
   if (!m) return null;
   let name = m[1]
     .replace(/[*_`]+/g, '')       // drop markdown emphasis
-    .replace(/<[^>]*>/g, '')      // drop stray HTML tags
+    .replace(/<[^>]*>/g, '')      // drop stray HTML tags/comments
     .replace(/\s+/g, ' ')
     .trim();
   // Cut at obvious sentence/line continuations people sometimes add.
   name = name.split(/\s[|·—]\s/)[0].trim();
   if (!name || name.length < 2) return null;
-  return name.slice(0, 48);
+  name = name.slice(0, 48).trim();
+  const key = clubKey(name);
+  if (!key || key.length < 2 || JUNK_CLUB_KEYS.has(key)) return null;
+  return name;
 }
 
-function clubKey(name) {
-  return name.toLowerCase().replace(/\s+/g, ' ').trim();
+// Valid GitHub handles referenced by a *profile* link in a block — i.e.
+// `github.com/<handle>` NOT followed by another path segment (which would make
+// it a repo/org link), and not a reserved path. Prevents repo/org links from
+// being mistaken for contributor handles.
+function handlesInBlock(block) {
+  const out = [];
+  const re = /github\.com\/([A-Za-z0-9](?:[A-Za-z0-9]|-(?=[A-Za-z0-9])){0,38})(?![A-Za-z0-9\/-])/gi;
+  let mm;
+  while ((mm = re.exec(block))) {
+    const handle = mm[1].toLowerCase();
+    if (!RESERVED_GH_PATHS.has(handle)) out.push(handle);
+  }
+  return out;
 }
 
 // Map GitHub handle -> club, read from the merged entries on the profile wall.
@@ -76,16 +121,13 @@ function wallHandleToClub(markdown) {
   const start = markdown.indexOf('ENTRIES:START');
   const end = markdown.indexOf('ENTRIES:END');
   const region = start !== -1 && end !== -1 ? markdown.slice(start, end) : markdown;
-  // Split into blocks on the `### ` entry headings so each block is one entry.
-  const blocks = region.split(/\n(?=###\s)/);
+  // Split into blocks on any markdown heading (#..######) so entry boundaries
+  // are respected even when a contributor used the wrong heading level.
+  const blocks = region.split(/\n(?=#{1,6}\s)/);
   for (const block of blocks) {
     const club = parseClub(block);
     if (!club) continue;
-    // Every handle referenced by a github.com profile link in the block.
-    const re = /github\.com\/([A-Za-z0-9-]+)/g;
-    let mm;
-    while ((mm = re.exec(block))) {
-      const handle = mm[1].toLowerCase();
+    for (const handle of handlesInBlock(block)) {
       if (!map.has(handle)) map.set(handle, club);
     }
   }
