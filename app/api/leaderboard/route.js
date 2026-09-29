@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { clubKey, resolveClub, clubAllowsMember } from '../../../lib/clubs';
 
 export const runtime = 'nodejs';
 export const revalidate = 45;
@@ -64,19 +65,6 @@ const RESERVED_GH_PATHS = new Set([
   'enterprise', 'login', 'join', 'new', 'search', 'explore', 'pulls', 'issues',
   'watching', 'dashboard', 'stars', 'contact', 'security', 'readme',
 ]);
-
-// Fold a club name to a canonical key so trivial variations — casing, extra
-// spaces, hyphens/punctuation, and accents — all land in the SAME bucket.
-// "IIT-Delhi OSS Club", "IIT Delhi OSS Club" and "iit  delhi oss club" match.
-function clubKey(name) {
-  return String(name)
-    .normalize('NFKD')
-    .replace(/[̀-ͯ]/g, '') // strip combining accent marks
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, ' ')     // punctuation/hyphens -> space
-    .replace(/\s+/g, ' ')
-    .trim();
-}
 
 // Pull a `Club: <name>` declaration out of free text (a PR body or a wall
 // entry). Tolerant of leading markdown (>, *, _, #, whitespace) and a few
@@ -213,12 +201,20 @@ export async function GET() {
   }
 
   const clubs = new Map(); // key -> club aggregate
-  function clubFor(name) {
-    const key = clubKey(name);
-    let club = clubs.get(key);
+  function clubFor(resolved) {
+    let club = clubs.get(resolved.key);
     if (!club) {
-      club = { key, name, members: new Map(), merged: 0, open: 0, latestAt: null };
-      clubs.set(key, club);
+      club = {
+        key: resolved.key,
+        name: resolved.name,
+        registered: resolved.registered,
+        roster: !!resolved.roster,
+        members: new Map(),
+        merged: 0,
+        open: 0,
+        latestAt: null,
+      };
+      clubs.set(resolved.key, club);
     }
     return club;
   }
@@ -239,11 +235,18 @@ export async function GET() {
     return mem;
   }
 
+  // A registered club with a roster only credits its listed members — this is
+  // what stops impersonation and score-stuffing. Rejected contributions are
+  // counted so the effect is observable but never scored.
+  let rejected = 0;
+
   // 1) Merged contributions — from the wall (durable, unbounded).
   for (const e of wallEntries) {
-    const club = clubFor(e.club);
-    club.merged += 1;
-    const mem = memberFor(club, e.handle);
+    const club = resolveClub(e.club);
+    if (!clubAllowsMember(club.roster, e.handle)) { rejected += 1; continue; }
+    const c = clubFor(club);
+    c.merged += 1;
+    const mem = memberFor(c, e.handle);
     mem.merged += 1;
     mem.prs += 1;
   }
@@ -257,11 +260,13 @@ export async function GET() {
     const login = u.login;
     const name = parseClub(p.body) || wallMap.get(login.toLowerCase()) || null;
     if (!name) { openUntagged += 1; continue; }
+    const club = resolveClub(name);
+    if (!clubAllowsMember(club.roster, login)) { rejected += 1; continue; }
     openTagged += 1;
-    const club = clubFor(name);
-    club.open += 1;
-    if (!club.latestAt || p.created_at > club.latestAt) club.latestAt = p.created_at;
-    const mem = memberFor(club, login);
+    const c = clubFor(club);
+    c.open += 1;
+    if (!c.latestAt || p.created_at > c.latestAt) c.latestAt = p.created_at;
+    const mem = memberFor(c, login);
     mem.open += 1;
     mem.prs += 1;
   }
@@ -273,13 +278,15 @@ export async function GET() {
     if (!isHuman(u)) continue;
     const name = parseClub(p.body) || wallMap.get(u.login.toLowerCase()) || null;
     if (!name) continue;
+    const club = resolveClub(name);
+    if (!clubAllowsMember(club.roster, u.login)) continue;
     const state = p.merged_at ? 'merged' : p.state === 'open' ? 'open' : 'closed';
     const at = p.merged_at || p.updated_at || p.created_at;
     activity.push({
       user: u.login,
       avatar: u.avatar_url || null,
-      club: name,
-      clubKey: clubKey(name),
+      club: club.name,
+      clubKey: club.key,
       state,
       when: relTime(at),
       at,
@@ -297,6 +304,8 @@ export async function GET() {
     .map((c) => ({
       key: c.key,
       name: c.name,
+      registered: c.registered,
+      roster: c.roster,
       merged: c.merged,
       open: c.open,
       total: c.merged + c.open,
@@ -324,6 +333,7 @@ export async function GET() {
       merged: totalMerged,
       openTagged,
       openUntagged,
+      rejected,
     },
     fetchedAt: new Date().toISOString(),
     errors: errors.length ? errors : undefined,

@@ -198,7 +198,14 @@ export default function LeaderboardPage() {
                         <span className={`leaderboard-rank ${rankClass}`}>{rank}</span>
                         <span className="lb-club-body">
                           <span className="lb-club-top">
-                            <span className="lb-club-name">{c.name}</span>
+                            <span className="lb-club-name">
+                              {c.name}
+                              {c.roster && (
+                                <span className="lb-verified" title="Roster-verified club — only registered members count">
+                                  <span className="material-symbols-outlined">verified</span>
+                                </span>
+                              )}
+                            </span>
                             <span className="lb-club-counts">
                               <span className="lb-count merged" title="Merged PRs">
                                 <span className="material-symbols-outlined">merge</span>{c.merged}

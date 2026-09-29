@@ -1409,3 +1409,6 @@ h1.hero-h .accent {
   .org-lb-callout { flex-wrap: wrap; }
   .org-lb-callout-cta { width: 100%; justify-content: center; }
 }
+
+.lb-verified { display: inline-flex; vertical-align: middle; margin-left: 5px; color: var(--cyan); }
+.lb-verified .material-symbols-outlined { font-size: 15px; }
