@@ -163,7 +163,9 @@ export default function LeaderboardPage() {
                 <div>
                   <div className="leaderboard-title">Clubs leaderboard</div>
                   <div className="leaderboard-sub">
-                    {totals ? `${totals.clubs} club${totals.clubs === 1 ? '' : 's'} · ${totals.taggedPRs} tagged PR${totals.taggedPRs === 1 ? '' : 's'}` : 'Ranked by total contributions'}
+                    {totals
+                      ? `${totals.clubs} club${totals.clubs === 1 ? '' : 's'} · ${totals.merged} merged · ${totals.openTagged} in flight`
+                      : 'Ranked by merged contributions'}
                   </div>
                 </div>
                 <span className="lb-rank-legend">merged decides the prize</span>

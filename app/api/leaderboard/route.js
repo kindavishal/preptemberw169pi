@@ -114,10 +114,24 @@ function handlesInBlock(block) {
   return out;
 }
 
-// Map GitHub handle -> club, read from the merged entries on the profile wall.
-function wallHandleToClub(markdown) {
-  const map = new Map();
-  if (!markdown) return map;
+// The contributor a wall entry belongs to: the handle in its "Contributed by"
+// attribution line if present, else the last profile handle in the block.
+function attributionHandle(block) {
+  const attr = block.match(/contributed by[^\n]*?github\.com\/([A-Za-z0-9-]+)/i);
+  if (attr) return attr[1].toLowerCase();
+  const all = handlesInBlock(block);
+  return all.length ? all[all.length - 1] : null;
+}
+
+// Parse the profile wall. The wall is the DURABLE source of truth for merged
+// contributions: every merged campaign PR leaves an entry here, and entries
+// never age out of an API page. Returns:
+//   entries    — one { handle, club } per tagged entry (a merged contribution)
+//   handleToClub — handle -> club, used to attribute a contributor's open PRs
+function parseWall(markdown) {
+  const entries = [];
+  const handleToClub = new Map();
+  if (!markdown) return { entries, handleToClub };
   const start = markdown.indexOf('ENTRIES:START');
   const end = markdown.indexOf('ENTRIES:END');
   const region = start !== -1 && end !== -1 ? markdown.slice(start, end) : markdown;
@@ -128,10 +142,27 @@ function wallHandleToClub(markdown) {
     const club = parseClub(block);
     if (!club) continue;
     for (const handle of handlesInBlock(block)) {
-      if (!map.has(handle)) map.set(handle, club);
+      if (!handleToClub.has(handle)) handleToClub.set(handle, club);
     }
+    const author = attributionHandle(block);
+    if (author) entries.push({ handle: author, club });
   }
-  return map;
+  return { entries, handleToClub };
+}
+
+// Fetch a list endpoint across pages (GitHub caps per_page at 100), stopping at
+// the first short page or `maxPages`. Removes the old hard 100-item ceiling.
+async function ghPaginate(pathBase, token, maxPages = 4) {
+  const items = [];
+  for (let page = 1; page <= maxPages; page++) {
+    const res = await gh(`${pathBase}&page=${page}`, token);
+    if (!res.ok) return { ok: false, status: res.status, items };
+    const arr = await res.json();
+    if (!Array.isArray(arr) || arr.length === 0) break;
+    items.push(...arr);
+    if (arr.length < 100) break;
+  }
+  return { ok: true, items };
 }
 
 export async function GET() {
@@ -145,93 +176,130 @@ export async function GET() {
   const repo = process.env.GITHUB_PROFILE_REPO || process.env.GITHUB_STATS_REPO || '.github';
   const wallPath = process.env.GITHUB_WALL_PATH || 'profile/README.md';
 
-  const [prsRes, wallRes] = await Promise.all([
-    gh(`/repos/${owner}/${repo}/pulls?state=all&per_page=100&sort=created&direction=desc`, token),
+  // Three sources, fetched together:
+  //   wall     — durable merged contributions (never ages out)
+  //   openPRs  — in-flight PRs, for live "open" counts (paginated for safety)
+  //   recent   — most recently touched PRs, for the activity feed
+  const [wallRes, openRes, recentRes] = await Promise.all([
     gh(`/repos/${owner}/${repo}/contents/${wallPath}`, token, 'application/vnd.github.raw'),
+    ghPaginate(`/repos/${owner}/${repo}/pulls?state=open&per_page=100&sort=created&direction=desc`, token, 4),
+    gh(`/repos/${owner}/${repo}/pulls?state=all&per_page=30&sort=updated&direction=desc`, token),
   ]);
 
   const errors = [];
-  let pulls = [];
-  if (prsRes.ok) {
-    const j = await prsRes.json();
-    pulls = Array.isArray(j) ? j : [];
-  } else {
-    errors.push({ endpoint: 'pulls', status: prsRes.status });
-  }
 
   let wallMd = '';
-  if (wallRes.ok) {
-    wallMd = await wallRes.text();
+  if (wallRes.ok) wallMd = await wallRes.text();
+  else errors.push({ endpoint: 'wall', status: wallRes.status });
+  const { entries: wallEntries, handleToClub: wallMap } = parseWall(wallMd);
+
+  const openPRs = openRes.ok ? openRes.items : [];
+  if (!openRes.ok) errors.push({ endpoint: 'open-prs', status: openRes.status });
+
+  let recentPulls = [];
+  if (recentRes.ok) {
+    const j = await recentRes.json();
+    recentPulls = Array.isArray(j) ? j : [];
   } else {
-    errors.push({ endpoint: 'wall', status: wallRes.status });
+    errors.push({ endpoint: 'recent-prs', status: recentRes.status });
   }
-  const wallMap = wallHandleToClub(wallMd);
 
-  const clubs = new Map();   // key -> club aggregate
-  const activity = [];
-  let taggedPRs = 0;
-  let untaggedPRs = 0;
+  // Avatars aren't in the wall, so collect them from the PR payloads we do have.
+  const avatarByLogin = new Map();
+  for (const p of [...openPRs, ...recentPulls]) {
+    if (p.user && p.user.login && p.user.avatar_url) {
+      avatarByLogin.set(p.user.login.toLowerCase(), p.user.avatar_url);
+    }
+  }
 
-  for (const p of pulls) {
+  const clubs = new Map(); // key -> club aggregate
+  function clubFor(name) {
+    const key = clubKey(name);
+    let club = clubs.get(key);
+    if (!club) {
+      club = { key, name, members: new Map(), merged: 0, open: 0, latestAt: null };
+      clubs.set(key, club);
+    }
+    return club;
+  }
+  function memberFor(club, login) {
+    let mem = club.members.get(login.toLowerCase());
+    if (!mem) {
+      mem = {
+        login,
+        avatar: avatarByLogin.get(login.toLowerCase()) || null,
+        merged: 0,
+        open: 0,
+        prs: 0,
+        href: `https://github.com/${owner}/${repo}/pulls?q=${encodeURIComponent(`is:pr author:${login}`)}`,
+      };
+      club.members.set(login.toLowerCase(), mem);
+    }
+    if (!mem.avatar) mem.avatar = avatarByLogin.get(login.toLowerCase()) || null;
+    return mem;
+  }
+
+  // 1) Merged contributions — from the wall (durable, unbounded).
+  for (const e of wallEntries) {
+    const club = clubFor(e.club);
+    club.merged += 1;
+    const mem = memberFor(club, e.handle);
+    mem.merged += 1;
+    mem.prs += 1;
+  }
+
+  // 2) Open (in-flight) PRs — from the live open-PR list.
+  let openTagged = 0;
+  let openUntagged = 0;
+  for (const p of openPRs) {
     const u = p.user;
     if (!isHuman(u)) continue;
     const login = u.login;
     const name = parseClub(p.body) || wallMap.get(login.toLowerCase()) || null;
-    if (!name) { untaggedPRs += 1; continue; }
-    taggedPRs += 1;
-
-    const key = clubKey(name);
-    const state = p.merged_at ? 'merged' : p.state === 'open' ? 'open' : 'closed';
-
-    let club = clubs.get(key);
-    if (!club) {
-      club = { key, name, members: new Map(), merged: 0, open: 0, closed: 0, latestAt: null };
-      clubs.set(key, club);
-    }
-    club[state] += 1;
+    if (!name) { openUntagged += 1; continue; }
+    openTagged += 1;
+    const club = clubFor(name);
+    club.open += 1;
     if (!club.latestAt || p.created_at > club.latestAt) club.latestAt = p.created_at;
-
-    let mem = club.members.get(login);
-    if (!mem) {
-      mem = {
-        login,
-        avatar: u.avatar_url || null,
-        prs: 0,
-        merged: 0,
-        href: `https://github.com/${owner}/${repo}/pulls?q=${encodeURIComponent(`is:pr author:${login}`)}`,
-      };
-      club.members.set(login, mem);
-    }
+    const mem = memberFor(club, login);
+    mem.open += 1;
     mem.prs += 1;
-    if (state === 'merged') mem.merged += 1;
-
-    if (activity.length < 30) {
-      activity.push({
-        user: login,
-        avatar: u.avatar_url || null,
-        club: name,
-        clubKey: key,
-        state,
-        when: relTime(p.created_at),
-        at: p.created_at,
-        title: p.title || '',
-        href: p.html_url,
-      });
-    }
   }
 
-  // Serialize clubs, ranked by MERGED PRs — the number that decides the prize.
-  // Closed-unmerged PRs are tracked but deliberately excluded from `total` and
-  // from ranking, so a club can't climb by opening and closing junk PRs. Open
-  // PRs break ties (a signal of live momentum) but never outweigh a merge.
+  // 3) Activity feed — recent PRs (any state) that we can attribute to a club.
+  const activity = [];
+  for (const p of recentPulls) {
+    const u = p.user;
+    if (!isHuman(u)) continue;
+    const name = parseClub(p.body) || wallMap.get(u.login.toLowerCase()) || null;
+    if (!name) continue;
+    const state = p.merged_at ? 'merged' : p.state === 'open' ? 'open' : 'closed';
+    const at = p.merged_at || p.updated_at || p.created_at;
+    activity.push({
+      user: u.login,
+      avatar: u.avatar_url || null,
+      club: name,
+      clubKey: clubKey(name),
+      state,
+      when: relTime(at),
+      at,
+      title: p.title || '',
+      href: p.html_url,
+    });
+    if (activity.length >= 30) break;
+  }
+
+  // Serialize clubs, ranked by MERGED contributions — the number that decides
+  // the prize, and the one that survives long-term because it comes from the
+  // wall. Open PRs break ties as a signal of live momentum but never outweigh
+  // a merge, so a club can't climb by opening (or open/closing) junk PRs.
   const ranked = Array.from(clubs.values())
     .map((c) => ({
       key: c.key,
       name: c.name,
       merged: c.merged,
       open: c.open,
-      closed: c.closed,
-      total: c.merged + c.open, // counts toward the standing; excludes closed
+      total: c.merged + c.open,
       memberCount: c.members.size,
       latestAt: c.latestAt,
       members: Array.from(c.members.values())
@@ -246,16 +314,22 @@ export async function GET() {
         (b.latestAt || '').localeCompare(a.latestAt || ''),
     );
 
+  const totalMerged = ranked.reduce((s, c) => s + c.merged, 0);
   const data = {
     wall: { owner, repo, path: wallPath },
     clubs: ranked,
     activity,
-    totals: { clubs: ranked.length, taggedPRs, untaggedPRs },
+    totals: {
+      clubs: ranked.length,
+      merged: totalMerged,
+      openTagged,
+      openUntagged,
+    },
     fetchedAt: new Date().toISOString(),
     errors: errors.length ? errors : undefined,
   };
 
-  if (pulls.length || wallMd) {
+  if (wallMd || openPRs.length || recentPulls.length) {
     cache = { at: Date.now(), data };
   }
 
