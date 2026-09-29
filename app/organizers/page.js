@@ -352,6 +352,24 @@ export default function Organizers() {
           </div>
         </section>
 
+        {/* Clubs leaderboard callout */}
+        <section className="section">
+          <div className="org-lb-callout">
+            <span className="org-lb-callout-icon"><span className="material-symbols-outlined">trophy</span></span>
+            <div className="org-lb-callout-body">
+              <div className="org-lb-callout-title">New: a live Clubs Leaderboard</div>
+              <div className="org-lb-callout-sub">
+                Every PR your community opens is counted toward your club in real time. Have attendees add a{' '}
+                <code style={{ background: 'rgba(255,255,255,0.1)', padding: '1px 5px', borderRadius: 5 }}>Club: {'{your club}'}</code>{' '}
+                line to their PR — the top club wins prizes. Track the whole room on one live board.
+              </div>
+            </div>
+            <a href="/leaderboard" className="org-lb-callout-cta">
+              Open the leaderboard<span className="material-symbols-outlined">north_east</span>
+            </a>
+          </div>
+        </section>
+
         {/* 1 · Curriculum */}
         <section className="section" id="curriculum">
           <div className="card org-card">
