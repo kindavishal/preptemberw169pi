@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { GithubMark, SiteFooter, ThemeToggle } from '../_components/chrome';
+import { SiteFooter, SiteNav } from '../_components/chrome';
 
 const PROFILE_OWNER = process.env.NEXT_PUBLIC_GITHUB_PROFILE_OWNER || '169Pi';
 const PROFILE_REPO = process.env.NEXT_PUBLIC_GITHUB_PROFILE_REPO || '.github';
@@ -100,25 +100,7 @@ export default function LeaderboardPage() {
 
   return (
     <div className="page">
-      <header className="site-nav">
-        <div className="nav-inner">
-          <a href="/" className="nav-brand-link" aria-label="169Pi Preptember home">
-            <span className="nav-logo">
-              <img src="/alpie-logo.webp" alt="169Pi logo" style={{ width: 30, height: 30, objectFit: 'contain' }} />
-            </span>
-            <span className="nav-title">169Pi</span>
-            <span className="nav-tag">Preptember · Clubs Leaderboard</span>
-          </a>
-          <div className="nav-actions" style={{ marginLeft: 'auto' }}>
-            <a href="/organizers" className="nav-link-organizers">For organizers</a>
-            <ThemeToggle />
-            <a href="/api/auth/github" className="auth-pill auth-pill-signin">
-              <GithubMark />
-              <span>Sign in<span className="hide-sm"> with GitHub</span></span>
-            </a>
-          </div>
-        </div>
-      </header>
+      <SiteNav />
 
       <main className="wrap">
         {/* Intro */}
