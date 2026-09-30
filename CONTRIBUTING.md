@@ -8,7 +8,7 @@ Thanks for your interest in improving Preptember!
 That contribution does **not** go to this repo. It goes to the
 [`169Pi/.github`](https://github.com/169Pi/.github) repo, under the
 "Make this README yours" section of `profile/README.md`. The live site walks you
-through every step: **https://169pi-kappa.vercel.app**
+through every step: **https://goodfirst.alpie.ai**
 
 **Do you want to improve this landing page itself** (the Next.js app)? Then you're in
 the right place — read on.

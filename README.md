@@ -2,7 +2,7 @@
 
 Beginner landing page that walks people through their first open-source contribution: adding an entry to the **"Make this README yours"** section of [`169Pi/.github`](https://github.com/169Pi/.github)'s `profile/README.md`.
 
-Live at **https://169pi-kappa.vercel.app**
+Live at **https://goodfirst.alpie.ai**
 
 ## Stack
 
@@ -52,8 +52,8 @@ See `.env.example` for the full list with defaults.
 
 1. Go to https://github.com/settings/developers → **OAuth Apps** → **New OAuth App**
 2. **Application name**: `Preptember (169Pi)`
-3. **Homepage URL**: `https://169pi-kappa.vercel.app`
-4. **Authorization callback URL**: `https://169pi-kappa.vercel.app/api/auth/callback`
+3. **Homepage URL**: `https://goodfirst.alpie.ai`
+4. **Authorization callback URL**: `https://goodfirst.alpie.ai/api/auth/callback`
 5. Copy the **Client ID**, generate a **Client secret**, and add both to Vercel → Project Settings → Environment Variables
 
 An OAuth app allows only one callback URL, so for local sign-in register a second app with `http://localhost:3001` as the homepage and `http://localhost:3001/api/auth/callback` as the callback, and put its credentials in `.env.local`.
