@@ -96,7 +96,57 @@ export default function LeaderboardPage() {
     });
   }
 
-  const maxTotal = clubs.length ? clubs[0].total : 0;
+  const maxMembers = clubs.reduce((m, c) => Math.max(m, c.memberCount), 0);
+
+  const leader = clubs[0] || null;
+  const compareUrl = `https://github.com/${PROFILE_OWNER}/${PROFILE_REPO}/compare`;
+  const showPodium = !error && (clubs.length > 0 || !loading);
+
+  function renderPodiumSlot(rank) {
+    const club = clubs[rank - 1];
+    const pClass = `p${rank}`;
+    const avSize = rank === 1 ? 66 : 52;
+    if (!club) {
+      return (
+        <div key={rank} className="podium-slot is-empty">
+          {rank === 1 && <div className="podium-crown" aria-hidden>👑</div>}
+          <div className="podium-avatar podium-avatar-empty" style={{ width: avSize, height: avSize }}>
+            <span className="material-symbols-outlined">add</span>
+          </div>
+          <div className="podium-empty-name">Open spot</div>
+          <div className="podium-stats"><span className="podium-claim-badge">yours to claim</span></div>
+          <div className={`podium-pedestal is-empty ${pClass}`}>
+            <div className="podium-rank-num">{rank}</div>
+          </div>
+        </div>
+      );
+    }
+    return (
+      <div key={rank} className={`podium-slot ${rank === 1 ? 'is-first' : ''}`}>
+        {rank === 1 && <div className="podium-crown" aria-hidden>👑</div>}
+        <div className="podium-avatar-wrap">
+          <Avatar src={null} seed={club.name} size={avSize} className="podium-avatar" />
+          <span className={`podium-medal m${rank}`}>{rank}</span>
+        </div>
+        <div className="podium-name">
+          {club.name}
+          {club.roster && (
+            <span className="podium-verified" title="Roster-verified club">
+              <span className="material-symbols-outlined">verified</span>
+            </span>
+          )}
+        </div>
+        <div className="podium-stats">
+          <span className="podium-people">{club.memberCount} {club.memberCount === 1 ? 'contributor' : 'contributors'}</span>
+          <span className="podium-prs">{club.total} PR{club.total === 1 ? '' : 's'}</span>
+        </div>
+        <div className={`podium-pedestal ${pClass}`}>
+          <div className="podium-rank-num">{rank}</div>
+          <div className="podium-total">{club.memberCount} {club.memberCount === 1 ? 'person' : 'people'}</div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="page">
@@ -114,7 +164,7 @@ export default function LeaderboardPage() {
           <p className="org-lede">
             Every PR your community opens to <strong>{PROFILE_OWNER}/{PROFILE_REPO}</strong> is counted toward your
             club here — live. Tag a <code>Club:</code> in your pull request and your contribution lands on the board
-            within a minute. The club with the most contributions wins <strong>prizes</strong> (announced soon 🎁).
+            within a minute. The club that gets the <strong>most people opening PRs</strong> wins <strong>prizes</strong> (announced soon 🎁).
           </p>
           <div className="lb-meta">
             <span className={`lb-live ${loading ? 'is-loading' : ''}`}>
@@ -146,6 +196,59 @@ export default function LeaderboardPage() {
           </section>
         )}
 
+        {showPodium && (
+          <section className="section">
+            <div className="card podium">
+              <div className="podium-head">
+                <div className="podium-title">
+                  <span className="material-symbols-outlined">emoji_events</span>
+                  The podium — top 3 clubs right now
+                </div>
+                <span className="podium-sub">most contributors wins the crown</span>
+              </div>
+
+              <div className="podium-stage">
+                {renderPodiumSlot(2)}
+                {renderPodiumSlot(1)}
+                {renderPodiumSlot(3)}
+              </div>
+
+              <div className="podium-claim">
+                <a className="podium-cta" href={compareUrl} target="_blank" rel="noreferrer">
+                  {leader ? 'Claim the top spot' : 'Claim #1'}
+                  <span className="material-symbols-outlined">north_east</span>
+                </a>
+                <div className="podium-claim-text">
+                  {leader ? (
+                    <>
+                      <span className="podium-claim-lead">👑 <strong>{leader.name}</strong> holds #1 with {leader.memberCount} {leader.memberCount === 1 ? 'person' : 'people'} opening PRs.</span>{' '}
+                      Think your club can rally more? Here&apos;s how:
+                    </>
+                  ) : (
+                    <>
+                      The podium is wide open — <strong>the crown is unclaimed.</strong> Be the first club on the board. Here&apos;s how:
+                    </>
+                  )}
+                </div>
+                <ol className="podium-steps">
+                  <li>
+                    <span className="podium-step-n">1</span>
+                    <span>Open a PR to <strong>{PROFILE_OWNER}/{PROFILE_REPO}</strong> and add <code>Club: Your Club</code> to the description.</span>
+                  </li>
+                  <li>
+                    <span className="podium-step-n">2</span>
+                    <span>Rally your crew in <a href={DISCORD_URL} target="_blank" rel="noreferrer">Discord</a> — every member&apos;s PR counts toward the club.</span>
+                  </li>
+                  <li>
+                    <span className="podium-step-n">3</span>
+                    <span>The more of you who open PRs, the higher you climb. <strong>Most contributors takes #1.</strong> 🏆</span>
+                  </li>
+                </ol>
+              </div>
+            </div>
+          </section>
+        )}
+
         <section className="section lb-grid">
           {/* Leaderboard */}
           <div className="lb-main">
@@ -156,10 +259,10 @@ export default function LeaderboardPage() {
                   <div className="leaderboard-sub">
                     {totals
                       ? `${totals.clubs} club${totals.clubs === 1 ? '' : 's'} · ${totals.merged} merged · ${totals.openTagged} in flight`
-                      : 'Ranked by merged contributions'}
+                      : 'Ranked by people opening PRs'}
                   </div>
                 </div>
-                <span className="lb-rank-legend">merged decides the prize</span>
+                <span className="lb-rank-legend">most contributors wins</span>
               </div>
 
               <ol className="lb-list">
@@ -182,7 +285,7 @@ export default function LeaderboardPage() {
                   const rank = i + 1;
                   const rankClass = rank === 1 ? 'rank-1' : rank === 2 ? 'rank-2' : rank === 3 ? 'rank-3' : '';
                   const isOpen = expanded.has(c.key);
-                  const pct = maxTotal ? Math.max(6, Math.round((c.total / maxTotal) * 100)) : 0;
+                  const pct = maxMembers ? Math.max(6, Math.round((c.memberCount / maxMembers) * 100)) : 0;
                   return (
                     <li key={c.key} className={`lb-club ${rank <= 3 ? 'top3' : ''}`}>
                       <button type="button" className="lb-club-row" onClick={() => toggle(c.key)} aria-expanded={isOpen}>
@@ -198,20 +301,20 @@ export default function LeaderboardPage() {
                               )}
                             </span>
                             <span className="lb-club-counts">
+                              <span className="lb-count prs" title="Total PRs opened">
+                                {c.total} PR{c.total === 1 ? '' : 's'}
+                              </span>
                               <span className="lb-count merged" title="Merged PRs">
                                 <span className="material-symbols-outlined">merge</span>{c.merged}
                               </span>
                               <span className="lb-count open" title="Open PRs">
                                 <span className="material-symbols-outlined">pending</span>{c.open}
                               </span>
-                              <span className="lb-count members" title="Members contributing">
-                                <span className="material-symbols-outlined">group</span>{c.memberCount}
-                              </span>
                             </span>
                           </span>
                           <span className="lb-bar"><span className="lb-bar-fill" style={{ width: `${pct}%` }} /></span>
                         </span>
-                        <span className="lb-total"><strong>{c.total}</strong><span>PRs</span></span>
+                        <span className="lb-total"><strong>{c.memberCount}</strong><span>{c.memberCount === 1 ? 'person' : 'people'}</span></span>
                         <span className={`material-symbols-outlined lb-chev ${isOpen ? 'open' : ''}`}>expand_more</span>
                       </button>
                       {isOpen && (
