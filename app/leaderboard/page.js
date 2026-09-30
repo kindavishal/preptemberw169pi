@@ -99,7 +99,6 @@ export default function LeaderboardPage() {
   const maxMembers = clubs.reduce((m, c) => Math.max(m, c.memberCount), 0);
 
   const leader = clubs[0] || null;
-  const compareUrl = `https://github.com/${PROFILE_OWNER}/${PROFILE_REPO}/compare`;
   const showPodium = !error && (clubs.length > 0 || !loading);
 
   function renderPodiumSlot(rank) {
@@ -214,9 +213,9 @@ export default function LeaderboardPage() {
               </div>
 
               <div className="podium-claim">
-                <a className="podium-cta" href={compareUrl} target="_blank" rel="noreferrer">
+                <a className="podium-cta" href="/#workflow">
                   {leader ? 'Claim the top spot' : 'Claim #1'}
-                  <span className="material-symbols-outlined">north_east</span>
+                  <span className="material-symbols-outlined">arrow_forward</span>
                 </a>
                 <div className="podium-claim-text">
                   {leader ? (
