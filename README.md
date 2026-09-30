@@ -35,7 +35,7 @@ See `.env.example` for the full list with defaults.
 | `GITHUB_CLIENT_ID` / `GITHUB_CLIENT_SECRET` | Yes | From your GitHub OAuth app (see below) |
 | `GITHUB_REDIRECT_URI` | Yes | Must exactly match the OAuth app's callback URL |
 | `SESSION_SECRET` | Yes | Signs the session cookie. Use a long random string (`openssl rand -base64 32`) |
-| `GITHUB_TOKEN` | No | Raises the stats rate limit from 60/hr to 5,000/hr |
+| `GITHUB_TOKEN` | Recommended | Raises the GitHub rate limit from 60/hr to 5,000/hr for both the live stats and the Clubs Leaderboard. Without it the leaderboard can be blanked by rate limits (it falls back to the last known standings, marked stale). |
 | `NEXT_PUBLIC_SITE_URL` | No | Base URL for link previews. Defaults to the Vercel production domain |
 | `NEXT_PUBLIC_DISCORD_URL` | No | Discord invite used across the page |
 | `GITHUB_STARS_*`, `GITHUB_STATS_*`, `GITHUB_PROFILE_*`, `NEXT_PUBLIC_GITHUB_*` | No | Override which repos the page tracks (see below) |
