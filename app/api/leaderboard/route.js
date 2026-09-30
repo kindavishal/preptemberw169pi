@@ -303,10 +303,10 @@ export async function GET() {
     if (activity.length >= 30) break;
   }
 
-  // Serialize clubs, ranked by MERGED contributions — the number that decides
-  // the prize, and the one that survives long-term because it comes from the
-  // wall. Open PRs break ties as a signal of live momentum but never outweigh
-  // a merge, so a club can't climb by opening (or open/closing) junk PRs.
+  // Serialize clubs, ranked by the number of distinct PEOPLE who opened PRs for
+  // the club — the metric that rewards broad participation (mobilizing a crew)
+  // over one person spamming PRs. Total PRs opened breaks ties as a momentum
+  // signal, then recency. Roster gating still stops score-stuffing upstream.
   const ranked = Array.from(clubs.values())
     .map((c) => ({
       key: c.key,
@@ -324,9 +324,8 @@ export async function GET() {
     }))
     .sort(
       (a, b) =>
-        b.merged - a.merged ||
-        b.open - a.open ||
         b.memberCount - a.memberCount ||
+        b.total - a.total ||
         (b.latestAt || '').localeCompare(a.latestAt || ''),
     );
 
