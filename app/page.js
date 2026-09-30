@@ -1,8 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { usePresence } from '../lib/usePresence';
-import { GithubMark, SiteFooter, ThemeToggle } from './_components/chrome';
+import { SiteFooter, SiteNav } from './_components/chrome';
 
 const OWNER = process.env.NEXT_PUBLIC_GITHUB_OWNER || '169Pi';
 const REPO = process.env.NEXT_PUBLIC_GITHUB_REPO || 'Alpie-Core';
@@ -272,7 +271,6 @@ export default function Home() {
   const [copiedEntry, setCopiedEntry] = useState(false);
 
   const cd = useCountdown(NEXT_MERGE_DATE);
-  const hereNow = usePresence();
 
   useEffect(() => {
     try {
@@ -457,42 +455,7 @@ export default function Home() {
 
   return (
     <div className="page">
-      {/* Sticky nav */}
-      <header className="site-nav">
-        <div className="nav-inner">
-          <a href="#overview" className="nav-brand-link" aria-label="169Pi Preptember home">
-            <span className="nav-logo">
-              <img src="/alpie-logo.webp" alt="169Pi logo" style={{ width: 30, height: 30, objectFit: 'contain' }} />
-            </span>
-            <span className="nav-title">169Pi</span>
-            <span className="nav-tag">Preptember · Road to Hacktoberfest</span>
-          </a>
-
-          <div className="nav-actions" style={{ marginLeft: 'auto' }}>
-            <a href="/organizers" className="nav-link-organizers">For Organizers</a>
-            <ThemeToggle />
-            {hereNow !== null && (
-              <span className="presence" aria-live="polite" title={`${hereNow} ${hereNow === 1 ? 'person' : 'people'} here right now`}>
-                <span className="presence-dot" />
-                <span className="presence-num">{hereNow}</span>
-                <span className="presence-label" style={{ marginLeft: 2 }}>here now</span>
-              </span>
-            )}
-            {user ? (
-              <span className="auth-pill">
-                {user.avatar ? <img src={user.avatar} alt={user.login} /> : null}
-                <span>@{user.login}</span>
-                <button className="logout" onClick={logout}>sign out</button>
-              </span>
-            ) : (
-              <a href="/api/auth/github" className="auth-pill auth-pill-signin">
-                <GithubMark />
-                <span>Sign in<span className="hide-sm"> with GitHub</span></span>
-              </a>
-            )}
-          </div>
-        </div>
-      </header>
+      <SiteNav user={user} onLogout={logout} />
 
       <main className="wrap" id="overview">
         {/* Announcement strip */}

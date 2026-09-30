@@ -1,9 +1,11 @@
 'use client';
 
-// Shared site chrome used by both the landing page and the organizers page so
-// the theme switcher, GitHub mark and footer never drift between the two.
+// Shared site chrome (nav, theme switcher, GitHub mark, footer) used by every
+// page so the header and footer never drift between them.
 
 import { useEffect, useState } from 'react';
+import { usePathname } from 'next/navigation';
+import { usePresence } from '../../lib/usePresence';
 
 const OWNER = process.env.NEXT_PUBLIC_GITHUB_OWNER || '169Pi';
 const REPO = process.env.NEXT_PUBLIC_GITHUB_REPO || 'Alpie-Core';
@@ -96,6 +98,89 @@ export const GithubMark = (props) => (
   </svg>
 );
 
+const NAV_LINKS = [
+  { href: '/', label: 'Home' },
+  { href: '/leaderboard', label: 'Clubs Leaderboard' },
+  { href: '/organizers', label: 'For Organizers' },
+];
+
+// Sticky site nav. Pages that already track the signed-in user (the landing
+// page) pass `user` + `onLogout`; everywhere else the nav loads it itself.
+export function SiteNav({ user: userProp, onLogout }) {
+  const pathname = usePathname();
+  const hereNow = usePresence();
+  const controlled = userProp !== undefined;
+  const [ownUser, setOwnUser] = useState(null);
+
+  useEffect(() => {
+    if (controlled) return;
+    let cancelled = false;
+    fetch('/api/auth/me', { cache: 'no-store' })
+      .then((r) => r.json())
+      .then((j) => { if (!cancelled) setOwnUser(j.user || null); })
+      .catch(() => {});
+    return () => { cancelled = true; };
+  }, [controlled]);
+
+  const user = controlled ? userProp : ownUser;
+
+  async function logout() {
+    if (onLogout) return onLogout();
+    try { await fetch('/api/auth/logout', { method: 'POST' }); } catch {}
+    setOwnUser(null);
+  }
+
+  return (
+    <header className="site-nav">
+      <div className="nav-inner">
+        <a href="/" className="nav-brand-link" aria-label="169Pi Preptember home">
+          <span className="nav-logo">
+            <img src="/alpie-logo.webp" alt="169Pi logo" style={{ width: 30, height: 30, objectFit: 'contain' }} />
+          </span>
+          <span className="nav-title">169Pi</span>
+          <span className="nav-tag">Preptember 2026</span>
+        </a>
+
+        <nav className="nav-links" aria-label="Site">
+          {NAV_LINKS.map((l) => (
+            <a
+              key={l.href}
+              href={l.href}
+              className={`nav-link${pathname === l.href ? ' active' : ''}`}
+              aria-current={pathname === l.href ? 'page' : undefined}
+            >
+              {l.label}
+            </a>
+          ))}
+        </nav>
+
+        <div className="nav-actions">
+          <ThemeToggle />
+          {hereNow !== null && (
+            <span className="presence" aria-live="polite" title={`${hereNow} ${hereNow === 1 ? 'person' : 'people'} here right now`}>
+              <span className="presence-dot" />
+              <span className="presence-num">{hereNow}</span>
+              <span className="presence-label" style={{ marginLeft: 2 }}>here now</span>
+            </span>
+          )}
+          {user ? (
+            <span className="auth-pill">
+              {user.avatar ? <img src={user.avatar} alt={user.login} /> : null}
+              <span>@{user.login}</span>
+              <button className="logout" onClick={logout}>sign out</button>
+            </span>
+          ) : (
+            <a href="/api/auth/github" className="auth-pill auth-pill-signin">
+              <GithubMark />
+              <span>Sign in<span className="hide-sm"> with GitHub</span></span>
+            </a>
+          )}
+        </div>
+      </div>
+    </header>
+  );
+}
+
 export function SiteFooter() {
   return (
     <footer className="site-footer">
@@ -123,6 +208,7 @@ export function SiteFooter() {
             <span className="footer-col-title">Community</span>
             <div className="footer-links">
               <a href={DISCORD_URL} target="_blank" rel="noreferrer">Discord Server</a>
+              <a href="/leaderboard">Clubs Leaderboard</a>
               <a href="/organizers">For Organizers</a>
               <a href="https://github.com/kindavishal/169pi" target="_blank" rel="noreferrer">Source Repository</a>
             </div>

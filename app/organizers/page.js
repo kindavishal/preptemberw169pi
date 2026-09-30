@@ -1,7 +1,7 @@
 'use client';
 
 import { useMemo, useRef, useState } from 'react';
-import { GithubMark, SiteFooter, ThemeToggle } from '../_components/chrome';
+import { SiteFooter, SiteNav } from '../_components/chrome';
 import { MARK_169PI } from './logo';
 
 const OWNER = process.env.NEXT_PUBLIC_GITHUB_OWNER || '169Pi';
@@ -306,26 +306,7 @@ export default function Organizers() {
 
   return (
     <div className="page">
-      {/* Sticky nav */}
-      <header className="site-nav">
-        <div className="nav-inner">
-          <a href="/" className="nav-brand-link" aria-label="169Pi Preptember home">
-            <span className="nav-logo">
-              <img src="/alpie-logo.webp" alt="169Pi logo" style={{ width: 30, height: 30, objectFit: 'contain' }} />
-            </span>
-            <span className="nav-title">169Pi</span>
-            <span className="nav-tag">Preptember · For Organizers</span>
-          </a>
-          <div className="nav-actions" style={{ marginLeft: 'auto' }}>
-            <a href="/" className="nav-link-organizers">← Checklist</a>
-            <ThemeToggle />
-            <a href="/api/auth/github" className="auth-pill auth-pill-signin">
-              <GithubMark />
-              <span>Sign in<span className="hide-sm"> with GitHub</span></span>
-            </a>
-          </div>
-        </div>
-      </header>
+      <SiteNav />
 
       <main className="wrap">
         {/* Intro */}
