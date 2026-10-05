@@ -436,8 +436,10 @@ h1.hero-h .accent {
 .stat-num.cyan { color: #38bdf8; }
 .stat-num.emerald { color: var(--emerald); }
 .stat-cap { font-family: 'Space Mono', monospace; font-size: 11px; color: #cbd5d3; }
-.stats-note { font-size: 12px; color: #cbd5d3; line-height: 1.5; text-align: center; }
-.stats-note strong { color: #fff; font-weight: 600; }
+/* Scoped under .stats so it outranks the generic `.hero p` / `.hero p strong`
+   rules, which otherwise paint this dark-card copy in the light-page text color. */
+.stats .stats-note { margin: 0; max-width: none; font-size: 12px; color: #cbd5d3; line-height: 1.5; text-align: center; }
+.stats .stats-note strong { color: #fff; font-weight: 600; }
 .stats-cta { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
 .btn {
   display: inline-flex; align-items: center; justify-content: center; gap: 6px;
