@@ -49,13 +49,13 @@ function isHuman(u) {
 }
 
 // Placeholder / junk values people leave in a `Club:` line (empty PR
-// templates, "TODO", etc.). Compared against the canonical key so casing and
+// templates, "TODO", etc.). Folded through clubKey so casing, spacing and
 // punctuation don't matter.
 const JUNK_CLUB_KEYS = new Set([
-  'none', 'na', 'n a', 'nil', 'null', 'tbd', 'todo', 'test', 'testing',
+  'none', 'na', 'nil', 'null', 'tbd', 'todo', 'test', 'testing',
   'example', 'sample', 'xxx', 'your club', 'your club name', 'club', 'club name',
   'my club', 'community', 'your community', 'unknown', 'foo', 'bar', 'asdf',
-]);
+].map(clubKey));
 
 // GitHub reserved paths that look like `github.com/<word>` but are not user
 // profiles — must never be mistaken for a contributor handle.
@@ -220,10 +220,21 @@ export async function GET() {
         merged: 0,
         open: 0,
         latestAt: null,
+        spellings: new Map(), // raw name -> times seen, to pick a display name
       };
       clubs.set(resolved.key, club);
     }
+    club.spellings.set(resolved.name, (club.spellings.get(resolved.name) || 0) + 1);
     return club;
+  }
+  // Self-serve clubs show their most common spelling; ties go to the one with
+  // more spaces ("Coding Club SATI" reads better than "CodingClubSATI").
+  // Registered clubs always show their official name.
+  function displayName(c) {
+    if (c.registered) return c.name;
+    const spaces = (n) => (n.match(/ /g) || []).length;
+    return Array.from(c.spellings.entries())
+      .sort((a, b) => b[1] - a[1] || spaces(b[0]) - spaces(a[0]))[0][0];
   }
   function memberFor(club, login) {
     let mem = club.members.get(login.toLowerCase());
@@ -310,7 +321,7 @@ export async function GET() {
   const ranked = Array.from(clubs.values())
     .map((c) => ({
       key: c.key,
-      name: c.name,
+      name: displayName(c),
       registered: c.registered,
       roster: c.roster,
       merged: c.merged,
@@ -328,6 +339,10 @@ export async function GET() {
         b.total - a.total ||
         (b.latestAt || '').localeCompare(a.latestAt || ''),
     );
+
+  // Keep the feed's club labels in sync with the chosen display names.
+  const nameByKey = new Map(ranked.map((c) => [c.key, c.name]));
+  for (const a of activity) a.club = nameByKey.get(a.clubKey) || a.club;
 
   const totalMerged = ranked.reduce((s, c) => s + c.merged, 0);
   const data = {
