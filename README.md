@@ -72,7 +72,7 @@ An OAuth app allows only one callback URL, so for local sign-in register a secon
 - Beginner aids: a "no coding, no terminal" banner, inline jargon tooltips and a collapsible glossary
 - Progress saved in `localStorage`
 - Sign in with GitHub, which auto-ticks the account, Star, Fork, PR and Merged steps from live GitHub state
-- Countdown to the next bi-weekly merge date
+- Countdown to the next monthly merge date
 - "Try Alpie-Core": leads with the no-setup options (alpie.ai and the 169pi Playground) and collapses the developer runtimes (Hugging Face, Ollama, Kaggle) plus a docs link
 - Floating "Ask Alpie" chat, proxied server-side
 - "Draft it with Alpie": a form that returns a Markdown entry for `profile/README.md`

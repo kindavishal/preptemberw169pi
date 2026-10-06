@@ -8,7 +8,6 @@ const REPO = process.env.NEXT_PUBLIC_GITHUB_REPO || 'Alpie-Core';
 const PROFILE_OWNER = process.env.NEXT_PUBLIC_GITHUB_PROFILE_OWNER || '169Pi';
 const PROFILE_REPO = process.env.NEXT_PUBLIC_GITHUB_PROFILE_REPO || '.github';
 const DISCORD_URL = process.env.NEXT_PUBLIC_DISCORD_URL || 'https://discord.gg/GwJP7MsZp7';
-const NEXT_MERGE_DATE = 'October 6, 2026';
 const STORAGE_KEY = 'preptember.progress.v3';
 
 const STEPS = [
@@ -40,8 +39,8 @@ const STEPS = [
       'It has to reflect something real about 169pi — a model, capability, or benchmark.',
       'Entries stay in the repo permanently; older ones may rotate out of the visible section but nothing gets deleted.',
     ] },
-  { id: 'review', tag: '06', title: 'Wait for the review', desc: 'bi-weekly merges', help: true, ctaText: 'Discuss in Discord ↗', ctaHref: DISCORD_URL,
-    guide: 'The team merges every two weeks — next merge is October 6, 2026. If they suggest a tweak, just commit again to the same branch and your PR updates itself.' },
+  { id: 'review', tag: '06', title: 'Wait for the review', desc: 'monthly merges', help: true, ctaText: 'Discuss in Discord ↗', ctaHref: DISCORD_URL,
+    guide: 'The team merges once a month, on the last day of the month. If they suggest a tweak, just commit again to the same branch and your PR updates itself.' },
   { id: 'merged', tag: '07', title: 'Merged → you did it', desc: 'first contribution done', help: true,
     guide: 'When it is merged, your entry is live on the 169pi org profile and 169pi ships you swag. You just made your first open-source contribution.' },
 ];
@@ -66,21 +65,29 @@ function renderGuide(text) {
 
 function pad(n) { return (n < 10 ? '0' : '') + n; }
 
-function useCountdown(target) {
+// Merges happen on the last day of every month.
+function nextMergeDate(now) {
+  const d = new Date(now);
+  return new Date(d.getFullYear(), d.getMonth() + 1, 0);
+}
+
+function useCountdown() {
   const [now, setNow] = useState(null);
   useEffect(() => {
     setNow(Date.now());
     const t = setInterval(() => setNow(Date.now()), 1000);
     return () => clearInterval(t);
   }, []);
-  if (now === null) return { days: '—', clock: '--:--:--' };
-  const ms = Math.max(0, new Date(target).getTime() - now);
+  if (now === null) return { days: '—', clock: '--:--:--', date: 'Last day of the month' };
+  const target = nextMergeDate(now);
+  const date = target.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+  const ms = Math.max(0, target.getTime() - now);
   const day = 86400000;
   const days = Math.floor(ms / day);
   const hrs = Math.floor((ms % day) / 3600000);
   const mins = Math.floor((ms % 3600000) / 60000);
   const secs = Math.floor((ms % 60000) / 1000);
-  return { days, clock: `${pad(hrs)}:${pad(mins)}:${pad(secs)}` };
+  return { days, clock: `${pad(hrs)}:${pad(mins)}:${pad(secs)}`, date };
 }
 
 function initialsColor(login) {
@@ -270,7 +277,7 @@ export default function Home() {
   const [entryError, setEntryError] = useState('');
   const [copiedEntry, setCopiedEntry] = useState(false);
 
-  const cd = useCountdown(NEXT_MERGE_DATE);
+  const cd = useCountdown();
 
   useEffect(() => {
     try {
@@ -560,7 +567,7 @@ export default function Home() {
               </div>
               <div className="countdown-merge">
                 <span>Next review ceremony:</span>
-                <strong>{NEXT_MERGE_DATE}</strong>
+                <strong>{cd.date}</strong>
               </div>
             </div>
           </div>
