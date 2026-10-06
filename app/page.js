@@ -8,7 +8,7 @@ const REPO = process.env.NEXT_PUBLIC_GITHUB_REPO || 'Alpie-Core';
 const PROFILE_OWNER = process.env.NEXT_PUBLIC_GITHUB_PROFILE_OWNER || '169Pi';
 const PROFILE_REPO = process.env.NEXT_PUBLIC_GITHUB_PROFILE_REPO || '.github';
 const DISCORD_URL = process.env.NEXT_PUBLIC_DISCORD_URL || 'https://discord.gg/GwJP7MsZp7';
-const NEXT_MERGE_DATE = 'October 6, 2026';
+const NEXT_MERGE_DATE = 'November 6, 2026';
 const STORAGE_KEY = 'preptember.progress.v3';
 
 const STEPS = [
@@ -40,8 +40,8 @@ const STEPS = [
       'It has to reflect something real about 169pi — a model, capability, or benchmark.',
       'Entries stay in the repo permanently; older ones may rotate out of the visible section but nothing gets deleted.',
     ] },
-  { id: 'review', tag: '06', title: 'Wait for the review', desc: 'bi-weekly merges', help: true, ctaText: 'Discuss in Discord ↗', ctaHref: DISCORD_URL,
-    guide: 'The team merges every two weeks — next merge is October 6, 2026. If they suggest a tweak, just commit again to the same branch and your PR updates itself.' },
+  { id: 'review', tag: '06', title: 'Wait for the review', desc: 'monthly merges', help: true, ctaText: 'Discuss in Discord ↗', ctaHref: DISCORD_URL,
+    guide: `The team merges once a month — next merge is ${NEXT_MERGE_DATE}. If they suggest a tweak, just commit again to the same branch and your PR updates itself.` },
   { id: 'merged', tag: '07', title: 'Merged → you did it', desc: 'first contribution done', help: true,
     guide: 'When it is merged, your entry is live on the 169pi org profile and 169pi ships you swag. You just made your first open-source contribution.' },
 ];
