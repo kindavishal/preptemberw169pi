@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { clubKey, resolveClub, clubAllowsMember } from '../../../lib/clubs';
+import { isIgnoredLogin } from '../../../lib/ignoredLogins';
 
 export const runtime = 'nodejs';
 export const revalidate = 45;
@@ -56,6 +57,7 @@ function isHuman(u) {
   if (u.type && u.type !== 'User') return false;
   const login = u.login.toLowerCase();
   if (login.endsWith('[bot]') || login.endsWith('-bot')) return false;
+  if (isIgnoredLogin(login)) return false;
   return !BOT_LOGINS.has(login);
 }
 

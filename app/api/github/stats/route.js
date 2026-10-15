@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { isIgnoredLogin } from '../../../../lib/ignoredLogins';
 
 export const runtime = 'nodejs';
 export const revalidate = 60;
@@ -68,7 +69,9 @@ export async function GET() {
   let pulls = [];
   if (prsRes.ok) {
     const j = await prsRes.json();
-    pulls = Array.isArray(j) ? j : [];
+    // Ignored handles (see lib/ignoredLogins) are dropped before anything is
+    // counted, so they affect neither the PR count, recent PRs nor the list.
+    pulls = (Array.isArray(j) ? j : []).filter((p) => !isIgnoredLogin(p.user?.login));
     prsCount = pulls.length;
     recentPRs = pulls.slice(0, 4).map((p) => ({
       user: p.user?.login || 'unknown',
