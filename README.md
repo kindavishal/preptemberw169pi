@@ -1,4 +1,4 @@
-# Preptember — 169Pi × Hacktoberfest
+# Good First Alpie — 169Pi × Hacktoberfest
 
 Beginner landing page that walks people through their first open-source contribution: adding an entry to the **"Make this README yours"** section of [`169Pi/.github`](https://github.com/169Pi/.github)'s `profile/README.md`.
 
@@ -51,7 +51,7 @@ See `.env.example` for the full list with defaults.
 ### Registering the GitHub OAuth app
 
 1. Go to https://github.com/settings/developers → **OAuth Apps** → **New OAuth App**
-2. **Application name**: `Preptember (169Pi)`
+2. **Application name**: `Good First Alpie (169Pi)`
 3. **Homepage URL**: `https://goodfirst.alpie.ai`
 4. **Authorization callback URL**: `https://goodfirst.alpie.ai/api/auth/callback`
 5. Copy the **Client ID**, generate a **Client secret**, and add both to Vercel → Project Settings → Environment Variables
@@ -83,7 +83,7 @@ An OAuth app allows only one callback URL, so for local sign-in register a secon
 
 ## Contributing
 
-See [CONTRIBUTING.md](CONTRIBUTING.md). Note: if you're here for the Preptember
+See [CONTRIBUTING.md](CONTRIBUTING.md). Note: if you're here for the Good First Alpie
 campaign itself (adding your entry to the 169pi profile), that goes to
 [`169Pi/.github`](https://github.com/169Pi/.github), not this repo — the live site
 walks you through it.

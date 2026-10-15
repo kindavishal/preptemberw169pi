@@ -45,7 +45,7 @@ export async function GET(req) {
     headers: {
       Authorization: `Bearer ${accessToken}`,
       Accept: 'application/vnd.github+json',
-      'User-Agent': 'preptember-app',
+      'User-Agent': 'good-first-alpie-app',
     },
   });
   if (!userRes.ok) {

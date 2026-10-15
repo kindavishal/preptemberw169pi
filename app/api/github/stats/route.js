@@ -18,7 +18,7 @@ function relTime(iso) {
 async function gh(path, token) {
   const headers = {
     Accept: 'application/vnd.github+json',
-    'User-Agent': 'preptember-app',
+    'User-Agent': 'good-first-alpie-app',
     'X-GitHub-Api-Version': '2022-11-28',
   };
   if (token) headers.Authorization = `Bearer ${token}`;

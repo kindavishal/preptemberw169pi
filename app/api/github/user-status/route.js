@@ -19,7 +19,7 @@ async function gh(path, token) {
     headers: {
       Authorization: `Bearer ${token}`,
       Accept: 'application/vnd.github+json',
-      'User-Agent': 'preptember-app',
+      'User-Agent': 'good-first-alpie-app',
     },
     cache: 'no-store',
   });

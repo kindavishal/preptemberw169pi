@@ -1,7 +1,7 @@
 export default function manifest() {
   return {
-    name: '169Pi Preptember',
-    short_name: 'Preptember',
+    name: '169Pi Good First Alpie',
+    short_name: 'Good First Alpie',
     description: 'Make your first open-source contribution — we’ll walk you through every step.',
     start_url: '/',
     display: 'standalone',

@@ -133,12 +133,12 @@ export function SiteNav({ user: userProp, onLogout }) {
   return (
     <header className="site-nav">
       <div className="nav-inner">
-        <a href="/" className="nav-brand-link" aria-label="169Pi Preptember home">
+        <a href="/" className="nav-brand-link" aria-label="169Pi Good First Alpie home">
           <span className="nav-logo">
             <img src="/alpie-logo.webp" alt="169Pi logo" style={{ width: 30, height: 30, objectFit: 'contain' }} />
           </span>
           <span className="nav-title">169Pi</span>
-          <span className="nav-tag">Preptember 2026</span>
+          <span className="nav-tag">Good First Alpie 2026</span>
         </a>
 
         <nav className="nav-links" aria-label="Site">
@@ -189,10 +189,10 @@ export function SiteFooter() {
           <div className="footer-brand">
             <div className="footer-brand-row">
               <img src="/alpie-logo.webp" alt="169Pi logo" style={{ width: 24, height: 24, objectFit: 'contain' }} />
-              <span className="footer-brand-name">169Pi Preptember</span>
+              <span className="footer-brand-name">169Pi Good First Alpie</span>
             </div>
             <p className="footer-blurb">
-              Built for Preptember 2026 — an open warm-up and companion to Hacktoberfest. Empowering first-time open-source builders with guided workflows.
+              Built for Good First Alpie 2026 — an open warm-up and companion to Hacktoberfest. Empowering first-time open-source builders with guided workflows.
             </p>
           </div>
           <div className="footer-col">
@@ -215,7 +215,7 @@ export function SiteFooter() {
           </div>
         </div>
         <div className="footer-bar">
-          <span>Built by <a className="strong" href="https://github.com/kindavishal/169pi" target="_blank" rel="noreferrer">@kindavishal</a> for Preptember 2026 · unofficial companion to Hacktoberfest</span>
+          <span>Built by <a className="strong" href="https://github.com/kindavishal/169pi" target="_blank" rel="noreferrer">@kindavishal</a> for Good First Alpie 2026 · unofficial companion to Hacktoberfest</span>
           <a href="https://github.com/kindavishal/169pi" target="_blank" rel="noreferrer">github.com/kindavishal/169pi</a>
         </div>
       </div>
