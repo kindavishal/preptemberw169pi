@@ -1,10 +1,10 @@
 # Contributing
 
-Thanks for your interest in improving Preptember!
+Thanks for your interest in improving Good First Alpie!
 
 ## Two different kinds of "contribution"
 
-**Are you here for the Preptember campaign — adding your entry to the 169pi profile?**
+**Are you here for the Good First Alpie campaign — adding your entry to the 169pi profile?**
 That contribution does **not** go to this repo. It goes to the
 [`169Pi/.github`](https://github.com/169Pi/.github) repo, under the
 "Make this README yours" section of `profile/README.md`. The live site walks you

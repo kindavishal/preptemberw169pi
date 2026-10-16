@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { verify, sessionCookieName } from '../../../../lib/session';
+import { ghPaginate } from '../../../../lib/ghPaginate';
 
 export const runtime = 'nodejs';
 
@@ -19,7 +20,7 @@ async function gh(path, token) {
     headers: {
       Authorization: `Bearer ${token}`,
       Accept: 'application/vnd.github+json',
-      'User-Agent': 'preptember-app',
+      'User-Agent': 'good-first-alpie-app',
     },
     cache: 'no-store',
   });
@@ -38,23 +39,22 @@ export async function GET(req) {
 
   const [starRes, forksRes, prsRes] = await Promise.all([
     gh(`/user/starred/${starOwner}/${starRepo}`, token),
-    gh(`/repos/${prOwner}/${prRepo}/forks?per_page=100&sort=newest`, token),
-    gh(`/repos/${prOwner}/${prRepo}/pulls?state=all&per_page=100&sort=created&direction=desc`, token),
+    // Paginated so a fork or PR older than the newest 100 is still found.
+    ghPaginate((p) => gh(p, token), `/repos/${prOwner}/${prRepo}/forks?per_page=100&sort=newest`, 10),
+    ghPaginate((p) => gh(p, token), `/repos/${prOwner}/${prRepo}/pulls?state=all&per_page=100&sort=created&direction=desc`, 10),
   ]);
 
   const starred = starRes.status === 204;
 
   let forked = false;
   if (forksRes.ok) {
-    const forks = await forksRes.json();
-    forked = forks.some((f) => f.owner && f.owner.login === login);
+    forked = forksRes.items.some((f) => f.owner && f.owner.login === login);
   }
 
   let openPr = false;
   let mergedPr = false;
   if (prsRes.ok) {
-    const prs = await prsRes.json();
-    for (const pr of prs) {
+    for (const pr of prsRes.items) {
       if (pr.user && pr.user.login === login) {
         if (pr.merged_at) mergedPr = true;
         else if (pr.state === 'open') openPr = true;

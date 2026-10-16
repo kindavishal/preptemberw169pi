@@ -81,6 +81,7 @@ export default function LeaderboardPage() {
   const clubs = data?.clubs || [];
   const activity = data?.activity || [];
   const totals = data?.totals;
+  const reviewLabel = data?.reviewLabel || 'ready-for-review';
 
   let agoLabel = '';
   if (fetchedAtRef.current) {
@@ -161,9 +162,9 @@ export default function LeaderboardPage() {
             Which club is <span className="accent">leading the wall?</span>
           </h1>
           <p className="org-lede">
-            Every PR your community opens to <strong>{PROFILE_OWNER}/{PROFILE_REPO}</strong> is counted toward your
-            club here — live. Tag a <code>Club:</code> in your pull request and your contribution lands on the board
-            within a minute. The club that gets the <strong>most people opening PRs</strong> wins <strong>prizes</strong> (announced soon 🎁).
+            Every PR your community opens to <strong>{PROFILE_OWNER}/{PROFILE_REPO}</strong> counts toward your
+            club here — live — once a maintainer labels it <code>{reviewLabel}</code>. Tag a <code>Club:</code> in your
+            pull request and it lands on the board within a minute of getting that label. PRs without the label don&apos;t count. The club that gets the <strong>most people opening PRs</strong> wins <strong>prizes</strong> (announced soon 🎁).
           </p>
           <div className="lb-meta">
             <span className={`lb-live ${loading ? 'is-loading' : ''}`}>
@@ -257,7 +258,7 @@ export default function LeaderboardPage() {
                   <div className="leaderboard-title">Clubs leaderboard</div>
                   <div className="leaderboard-sub">
                     {totals
-                      ? `${totals.clubs} club${totals.clubs === 1 ? '' : 's'} · ${totals.merged} merged · ${totals.openTagged} in flight`
+                      ? `${totals.clubs} club${totals.clubs === 1 ? '' : 's'} · ${totals.merged} merged · ${totals.openTagged} in flight${totals.openUnlabeled ? ` · ${totals.openUnlabeled} awaiting ${reviewLabel}` : ''}`
                       : 'Ranked by people opening PRs'}
                   </div>
                 </div>
@@ -374,7 +375,7 @@ export default function LeaderboardPage() {
               <ol className="lb-steps">
                 <li>Open a PR adding your entry to the wall (see the <a href="/">checklist</a>).</li>
                 <li>Add a line <code>Club: Your Club Name</code> to the PR description.</li>
-                <li>That&apos;s it — your PR is counted here within a minute, and again when it merges.</li>
+                <li>Once a maintainer labels it <code>{reviewLabel}</code>, it&apos;s counted here within a minute. PRs without that label don&apos;t count.</li>
               </ol>
               <a
                 href={`https://github.com/${PROFILE_OWNER}/${PROFILE_REPO}/compare`}

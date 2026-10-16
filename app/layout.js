@@ -26,7 +26,7 @@ export const metadata = {
     description: DESCRIPTION,
     type: 'website',
     url: '/',
-    siteName: '169Pi Preptember',
+    siteName: '169Pi Good First Alpie',
     images: [{ url: '/og-image.png', width: 1200, height: 630, alt: TITLE }],
   },
   twitter: {

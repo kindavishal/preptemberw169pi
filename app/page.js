@@ -425,7 +425,7 @@ export default function Home() {
   async function generateEntryPrompt() {
     setEntryBusy(true);
     setEntryError('');
-    const ask = `Write a single, ready-to-paste image-generation prompt (for tools like Midjourney, DALL·E or Ideogram) for a small square "brick" tile that I'll generate and add to the 169Pi open-source README contributor wall as my first open-source contribution during Preptember. Keep bracketed placeholders such as [your name], [your motif] and [your accent colour] so I can make it my own before generating. Reflect 169Pi's identity (an open-source AI lab building the best local & offline-first models out of India for the world). Keep it to one vivid but concrete paragraph and end with style and aspect-ratio tags. Return only the prompt text — keep the bracketed placeholders, no preamble.`;
+    const ask = `Write a single, ready-to-paste image-generation prompt (for tools like Midjourney, DALL·E or Ideogram) for a small square "brick" tile that I'll generate and add to the 169Pi open-source README contributor wall as my first open-source contribution during Good First Alpie. Keep bracketed placeholders such as [your name], [your motif] and [your accent colour] so I can make it my own before generating. Reflect 169Pi's identity (an open-source AI lab building the best local & offline-first models out of India for the world). Keep it to one vivid but concrete paragraph and end with style and aspect-ratio tags. Return only the prompt text — keep the bracketed placeholders, no preamble.`;
     try {
       const res = await fetch('/api/alpie', {
         method: 'POST',
@@ -470,7 +470,7 @@ export default function Home() {
           <div className="ctxbar-main">
             <span className="ctxbar-tag"><span className="dot" />FIRST TIME? PERFECT</span>
             <span className="ctxbar-text">
-              It&apos;s <strong>Preptember</strong> — the warm-up to Hacktoberfest. Beginner-friendly first open-source contribution with 169Pi. No experience needed — every step has a short guide, and you can ask Alpie if you get stuck.
+              It&apos;s <strong>Good First Alpie</strong> — the warm-up to Hacktoberfest. Beginner-friendly first open-source contribution with 169Pi. No experience needed — every step has a short guide, and you can ask Alpie if you get stuck.
             </span>
           </div>
           <span className="ctxbar-note">
@@ -483,7 +483,7 @@ export default function Home() {
         <section className="hero section">
           <div className="hero-left">
             <div className="pill-pixel">
-              <span className="sq" />PREPTEMBER 2026 · WARM-UP TO HACKTOBERFEST
+              <span className="sq" />GOOD FIRST ALPIE 2026 · WARM-UP TO HACKTOBERFEST
             </div>
             <h1 className="hero-h">
               Get ready for Hacktoberfest<br />with <span className="accent">169Pi.</span>
@@ -692,7 +692,7 @@ export default function Home() {
           <div className="organize-card">
             <div className="organize-left">
               <span className="organize-eyebrow">RUNNING A SESSION?</span>
-              <h3 className="organize-title">Host Preptember for your community.</h3>
+              <h3 className="organize-title">Host Good First Alpie for your community.</h3>
               <p className="organize-sub">
                 Meetup, campus club or Discord — bring people through their first contribution together.
                 The <strong>For Organizers</strong> page has a ready-to-run instructor-led agenda, a Community Canvas

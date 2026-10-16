@@ -18,7 +18,7 @@ const CURRICULUM = [
     duration: '10 min',
     organizer:
       "Introduce 169Pi's Alpie-Core — a 32B-parameter, 4-bit open reasoning model built in India — and the goal for the session: everyone lands their first open-source contribution.",
-    attendee: 'Sign in to GitHub and authenticate on the Preptember website.',
+    attendee: 'Sign in to GitHub and authenticate on the Good First Alpie website.',
     icon: 'campaign',
   },
   {
@@ -88,7 +88,7 @@ function buildSvg(size, { community, logo }) {
   <image href="${MARK_169PI}" x="96" y="150" width="76" height="76" preserveAspectRatio="xMidYMid meet"/>
   <text x="192" y="186" font-family="${MONO}" font-size="28" font-weight="700" fill="#4edea3" letter-spacing="2">169PI</text>
   <text x="192" y="224" font-family="${MONO}" font-size="20" fill="#7e8ea3">built in India</text>
-  <text x="96" y="760" font-family="${MONO}" font-size="30" fill="#4cd7f6" letter-spacing="5">PREPTEMBER · OPEN SOURCE</text>
+  <text x="96" y="760" font-family="${MONO}" font-size="30" fill="#4cd7f6" letter-spacing="5">GOOD FIRST ALPIE · OPEN SOURCE</text>
   <text x="96" y="900" font-family="${SANS}" font-size="${nameSize}" font-weight="700" fill="url(#ac-grad)">${esc(name)}</text>
   <text x="96" y="988" font-family="${SANS}" font-size="52" font-weight="700" fill="#d4e4fa">× 169Pi</text>
   <text x="96" y="1052" font-family="${MONO}" font-size="30" fill="#94a3b8">for Open Source</text>
@@ -97,7 +97,7 @@ function buildSvg(size, { community, logo }) {
   <text x="140" y="1324" font-family="${SANS}" font-size="38" fill="#c3d3e8">with</text>
   <text x="140" y="1410" font-family="${SANS}" font-size="66" font-weight="700" fill="#10B981">#GoodFirstAlpie</text>
   <line x1="96" y1="1760" x2="984" y2="1760" stroke="#1E3835" stroke-width="2"/>
-  <text x="96" y="1826" font-family="${MONO}" font-size="26" fill="#4edea3" letter-spacing="1">Preptember · Road to Hacktoberfest 🧱</text>${logoMarkup}
+  <text x="96" y="1826" font-family="${MONO}" font-size="26" fill="#4edea3" letter-spacing="1">Good First Alpie · Road to Hacktoberfest 🧱</text>${logoMarkup}
 </svg>`;
   }
 
@@ -116,13 +116,13 @@ function buildSvg(size, { community, logo }) {
   <rect x="28" y="28" width="1144" height="574" rx="28" fill="none" stroke="#1E3835" stroke-width="2"/>
   <image href="${MARK_169PI}" x="72" y="66" width="64" height="64" preserveAspectRatio="xMidYMid meet"/>
   <text x="150" y="98" font-family="${MONO}" font-size="21" font-weight="700" fill="#4edea3" letter-spacing="2">169PI</text>
-  <text x="150" y="122" font-family="${MONO}" font-size="15" fill="#7e8ea3">Preptember · Open Source</text>
+  <text x="150" y="122" font-family="${MONO}" font-size="15" fill="#7e8ea3">Good First Alpie · Open Source</text>
   <text x="72" y="280" font-family="${SANS}" font-size="${nameSize}" font-weight="700" fill="url(#ac-grad)">${esc(name)}<tspan font-family="${SANS}" fill="#d4e4fa"> × 169Pi</tspan></text>
   <text x="72" y="330" font-family="${MONO}" font-size="24" fill="#4cd7f6" letter-spacing="2">for Open Source</text>
   <text x="72" y="420" font-family="${SANS}" font-size="30" fill="#c3d3e8">Make your first contribution with</text>
   <text x="72" y="478" font-family="${SANS}" font-size="52" font-weight="700" fill="#10B981">#GoodFirstAlpie</text>
   <line x1="72" y1="536" x2="1128" y2="536" stroke="#1E3835" stroke-width="2"/>
-  <text x="72" y="586" font-family="${MONO}" font-size="20" fill="#4edea3" letter-spacing="1">Preptember · Road to Hacktoberfest 🧱</text>${logoMarkup}
+  <text x="72" y="586" font-family="${MONO}" font-size="20" fill="#4edea3" letter-spacing="1">Good First Alpie · Road to Hacktoberfest 🧱</text>${logoMarkup}
 </svg>`;
 }
 
@@ -138,14 +138,14 @@ We're making our first open-source contribution with 169Pi — an open-source AI
 🧱 Make your first contribution with #GoodFirstAlpie
 ⭐ Star the repo · 🔀 open your first PR · 🌱 contribute to open source
 
-#GoodFirstAlpie #Preptember #Hacktoberfest #OpenSource #169Pi`;
+#GoodFirstAlpie #Hacktoberfest #OpenSource #169Pi`;
 }
 
 // Default, ready-to-paste image-generation prompt for external tools.
 function defaultFeaturePrompt(community) {
   const name = (community || 'our community').trim() || 'our community';
   const centerName = (community || '').trim() || '[your community]';
-  return `A bold, minimal hero banner celebrating ${name}'s first open-source contribution with 169Pi — an open-source AI lab building the best local & offline first models out of India for the world! Center the community name "${centerName}" with subtle circuit-board and terminal motifs, a deep pine-teal and emerald palette (#134E4A, #10B981, #0284C7) on a warm parchment or dark navy background. Clean geometric sans-serif type, generous negative space, flat vector illustration style, crisp edges. Add a small tag reading "Open Source · Preptember 2026". No photorealism, no stock-photo people, no clutter. Aspect ratio 16:9.`;
+  return `A bold, minimal hero banner celebrating ${name}'s first open-source contribution with 169Pi — an open-source AI lab building the best local & offline first models out of India for the world! Center the community name "${centerName}" with subtle circuit-board and terminal motifs, a deep pine-teal and emerald palette (#134E4A, #10B981, #0284C7) on a warm parchment or dark navy background. Clean geometric sans-serif type, generous negative space, flat vector illustration style, crisp edges. Add a small tag reading "Open Source · Good First Alpie 2026". No photorealism, no stock-photo people, no clutter. Aspect ratio 16:9.`;
 }
 
 export default function Organizers() {
@@ -178,7 +178,7 @@ export default function Organizers() {
 
   const postCaption = captionTouched ? caption : defaultCaption(community);
   const featurePrompt = promptTouched ? prompt : defaultFeaturePrompt(community);
-  const fileBase = `preptember-${(community || 'post').trim().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '') || 'post'}`;
+  const fileBase = `good-first-alpie-${(community || 'post').trim().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '') || 'post'}`;
 
   function onLogo(e) {
     const f = e.target.files && e.target.files[0];
@@ -283,7 +283,7 @@ export default function Organizers() {
     setPromptBusy(true);
     setPromptError('');
     const name = (community || 'our community').trim() || 'our community';
-    const ask = `Write a single, ready-to-paste image-generation prompt (for tools like Midjourney, DALL·E or Ideogram) for a graphic celebrating my community "${name}" making its first open-source contribution with 169Pi during Preptember. Reflect 169Pi's identity (an open-source AI lab building the best local & offline first models out of India for the world!) and its teal/emerald palette. Keep it to one vivid but concrete paragraph and end with style and aspect-ratio tags. Return only the prompt text — no preamble.`;
+    const ask = `Write a single, ready-to-paste image-generation prompt (for tools like Midjourney, DALL·E or Ideogram) for a graphic celebrating my community "${name}" making its first open-source contribution with 169Pi during Good First Alpie. Reflect 169Pi's identity (an open-source AI lab building the best local & offline first models out of India for the world!) and its teal/emerald palette. Keep it to one vivid but concrete paragraph and end with style and aspect-ratio tags. Return only the prompt text — no preamble.`;
     try {
       const res = await fetch('/api/alpie', {
         method: 'POST',
@@ -315,10 +315,10 @@ export default function Organizers() {
             <span className="sq" />FOR ORGANIZERS · RUN IT AS A WORKSHOP
           </div>
           <h1 className="org-h1">
-            Run Preptember like an <span className="accent">instructor-led workshop.</span>
+            Run Good First Alpie like an <span className="accent">instructor-led workshop.</span>
           </h1>
           <p className="org-lede">
-            Everything below maps to the live Preptember flow, so you don&apos;t build a lesson plan from scratch.
+            Everything below maps to the live Good First Alpie flow, so you don&apos;t build a lesson plan from scratch.
             Follow the standardized agenda, use the <strong>Community Canvas</strong> to make a co-branded social post
             announcing your session, and grab a prompt template for featuring your community. Meetup, campus club or
             Discord — bring a whole group through their first pull request together.

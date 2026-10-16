@@ -1,5 +1,7 @@
 import { NextResponse } from 'next/server';
 import { clubKey, resolveClub, clubAllowsMember } from '../../../lib/clubs';
+import { isIgnoredLogin } from '../../../lib/ignoredLogins';
+import { ghPaginate } from '../../../lib/ghPaginate';
 
 export const runtime = 'nodejs';
 export const revalidate = 45;
@@ -11,6 +13,8 @@ export const revalidate = 45;
 //   2. A `Club: <name>` line inside the entry they add to the profile wall
 //      (picked up once the PR is merged).
 // We bucket every human PR author into a club and rank clubs by contributions.
+// Only PRs carrying the review label (default `ready-for-review`) count — the
+// wall and PR bodies are used to attribute a PR to a club, never to score it.
 
 const CACHE_TTL_MS = 45 * 1000;
 let cache = { at: 0, data: null };
@@ -24,10 +28,19 @@ function relTime(iso) {
   return new Date(iso).toLocaleDateString();
 }
 
+// The label a PR must carry to count. Compared loosely (case, spaces, hyphens
+// ignored) so "Ready for Review" and `ready-for-review` are the same label.
+const REVIEW_LABEL = process.env.LEADERBOARD_REVIEW_LABEL || 'ready-for-review';
+const labelKey = (name) => String(name || '').toLowerCase().replace(/[^a-z0-9]+/g, '');
+function hasReviewLabel(p) {
+  const want = labelKey(REVIEW_LABEL);
+  return Array.isArray(p.labels) && p.labels.some((l) => labelKey(l && l.name) === want);
+}
+
 async function gh(path, token, accept = 'application/vnd.github+json') {
   const headers = {
     Accept: accept,
-    'User-Agent': 'preptember-app',
+    'User-Agent': 'good-first-alpie-app',
     'X-GitHub-Api-Version': '2022-11-28',
   };
   if (token) headers.Authorization = `Bearer ${token}`;
@@ -45,6 +58,7 @@ function isHuman(u) {
   if (u.type && u.type !== 'User') return false;
   const login = u.login.toLowerCase();
   if (login.endsWith('[bot]') || login.endsWith('-bot')) return false;
+  if (isIgnoredLogin(login)) return false;
   return !BOT_LOGINS.has(login);
 }
 
@@ -111,11 +125,11 @@ function attributionHandle(block) {
   return all.length ? all[all.length - 1] : null;
 }
 
-// Parse the profile wall. The wall is the DURABLE source of truth for merged
-// contributions: every merged campaign PR leaves an entry here, and entries
-// never age out of an API page. Returns:
-//   entries    — one { handle, club } per tagged entry (a merged contribution)
-//   handleToClub — handle -> club, used to attribute a contributor's open PRs
+// Parse the profile wall. Wall entries no longer score on their own (only
+// labeled PRs do), but they tell us which club a contributor belongs to.
+// Returns:
+//   entries    — one { handle, club } per tagged entry
+//   handleToClub — handle -> club, used to attribute PRs with no Club: line
 function parseWall(markdown) {
   const entries = [];
   const handleToClub = new Map();
@@ -138,21 +152,6 @@ function parseWall(markdown) {
   return { entries, handleToClub };
 }
 
-// Fetch a list endpoint across pages (GitHub caps per_page at 100), stopping at
-// the first short page or `maxPages`. Removes the old hard 100-item ceiling.
-async function ghPaginate(pathBase, token, maxPages = 4) {
-  const items = [];
-  for (let page = 1; page <= maxPages; page++) {
-    const res = await gh(`${pathBase}&page=${page}`, token);
-    if (!res.ok) return { ok: false, status: res.status, items };
-    const arr = await res.json();
-    if (!Array.isArray(arr) || arr.length === 0) break;
-    items.push(...arr);
-    if (arr.length < 100) break;
-  }
-  return { ok: true, items };
-}
-
 export async function GET() {
   const token = process.env.GITHUB_TOKEN || null;
 
@@ -164,13 +163,17 @@ export async function GET() {
   const repo = process.env.GITHUB_PROFILE_REPO || process.env.GITHUB_STATS_REPO || '.github';
   const wallPath = process.env.GITHUB_WALL_PATH || 'profile/README.md';
 
-  // Three sources, fetched together:
-  //   wall     — durable merged contributions (never ages out)
-  //   openPRs  — in-flight PRs, for live "open" counts (paginated for safety)
+  // Four sources, fetched together:
+  //   wall     — handle -> club map, for attributing PRs without a Club: line
+  //   labeled  — every PR (any state) carrying the review label; the only PRs
+  //              that score. The issues endpoint is used because it can filter
+  //              by label; non-PR issues are dropped below.
+  //   open     — all open PRs, only to report how many still await the label
   //   recent   — most recently touched PRs, for the activity feed
-  const [wallRes, openRes, recentRes] = await Promise.all([
+  const [wallRes, labeledRes, openRes, recentRes] = await Promise.all([
     gh(`/repos/${owner}/${repo}/contents/${wallPath}`, token, 'application/vnd.github.raw'),
-    ghPaginate(`/repos/${owner}/${repo}/pulls?state=open&per_page=100&sort=created&direction=desc`, token, 4),
+    ghPaginate((p) => gh(p, token), `/repos/${owner}/${repo}/issues?state=all&labels=${encodeURIComponent(REVIEW_LABEL)}&per_page=100&sort=created&direction=desc`, 10),
+    ghPaginate((p) => gh(p, token), `/repos/${owner}/${repo}/pulls?state=open&per_page=100&sort=created&direction=desc`, 4),
     gh(`/repos/${owner}/${repo}/pulls?state=all&per_page=30&sort=updated&direction=desc`, token),
   ]);
 
@@ -179,7 +182,12 @@ export async function GET() {
   let wallMd = '';
   if (wallRes.ok) wallMd = await wallRes.text();
   else errors.push({ endpoint: 'wall', status: wallRes.status });
-  const { entries: wallEntries, handleToClub: wallMap } = parseWall(wallMd);
+  const { handleToClub: wallMap } = parseWall(wallMd);
+
+  const labeledPRs = labeledRes.ok
+    ? labeledRes.items.filter((i) => i.pull_request && hasReviewLabel(i))
+    : [];
+  if (!labeledRes.ok) errors.push({ endpoint: 'labeled-prs', status: labeledRes.status });
 
   const openPRs = openRes.ok ? openRes.items : [];
   if (!openRes.ok) errors.push({ endpoint: 'open-prs', status: openRes.status });
@@ -195,13 +203,13 @@ export async function GET() {
   // If GitHub blanked us (rate limit / outage) and we have a previous good
   // result, serve THAT marked stale rather than an empty board. Without a token
   // the unauthenticated limit is only 60/hr, so this is a real path in prod.
-  if (!wallRes.ok && !openRes.ok && cache.data) {
+  if (!wallRes.ok && !labeledRes.ok && cache.data) {
     return NextResponse.json({ ...cache.data, cached: true, stale: true, staleErrors: errors });
   }
 
   // Avatars aren't in the wall, so collect them from the PR payloads we do have.
   const avatarByLogin = new Map();
-  for (const p of [...openPRs, ...recentPulls]) {
+  for (const p of [...labeledPRs, ...openPRs, ...recentPulls]) {
     if (p.user && p.user.login && p.user.avatar_url) {
       avatarByLogin.set(p.user.login.toLowerCase(), p.user.avatar_url);
     }
@@ -258,42 +266,43 @@ export async function GET() {
   // counted so the effect is observable but never scored.
   let rejected = 0;
 
-  // 1) Merged contributions — from the wall (durable, unbounded).
-  for (const e of wallEntries) {
-    const club = resolveClub(e.club);
-    if (!clubAllowsMember(club.roster, e.handle)) { rejected += 1; continue; }
-    const c = clubFor(club);
-    c.merged += 1;
-    const mem = memberFor(c, e.handle);
-    mem.merged += 1;
-    mem.prs += 1;
-  }
-
-  // 2) Open (in-flight) PRs — from the live open-PR list.
+  // 1) Score labeled PRs only. Merged ones count as merged, open ones as in
+  // flight; closed-unmerged PRs never count.
   let openTagged = 0;
   let openUntagged = 0;
-  for (const p of openPRs) {
+  for (const p of labeledPRs) {
     const u = p.user;
     if (!isHuman(u)) continue;
+    const isMerged = !!(p.pull_request && p.pull_request.merged_at);
+    const isOpen = p.state === 'open';
+    if (!isMerged && !isOpen) continue;
     const login = u.login;
     const name = parseClub(p.body) || wallMap.get(login.toLowerCase()) || null;
-    if (!name) { openUntagged += 1; continue; }
+    if (!name) { if (isOpen) openUntagged += 1; continue; }
     const club = resolveClub(name);
     if (!clubAllowsMember(club.roster, login)) { rejected += 1; continue; }
-    openTagged += 1;
     const c = clubFor(club);
-    c.open += 1;
-    if (!c.latestAt || p.created_at > c.latestAt) c.latestAt = p.created_at;
     const mem = memberFor(c, login);
-    mem.open += 1;
+    if (isMerged) {
+      c.merged += 1;
+      mem.merged += 1;
+    } else {
+      openTagged += 1;
+      c.open += 1;
+      mem.open += 1;
+    }
     mem.prs += 1;
+    if (!c.latestAt || p.created_at > c.latestAt) c.latestAt = p.created_at;
   }
 
-  // 3) Activity feed — recent PRs (any state) that we can attribute to a club.
+  // Open PRs that don't carry the review label yet — reported, never scored.
+  const openUnlabeled = openPRs.filter((p) => isHuman(p.user) && !hasReviewLabel(p)).length;
+
+  // 2) Activity feed — recent labeled PRs (any state) we can attribute to a club.
   const activity = [];
   for (const p of recentPulls) {
     const u = p.user;
-    if (!isHuman(u)) continue;
+    if (!isHuman(u) || !hasReviewLabel(p)) continue;
     const name = parseClub(p.body) || wallMap.get(u.login.toLowerCase()) || null;
     if (!name) continue;
     const club = resolveClub(name);
@@ -347,6 +356,7 @@ export async function GET() {
   const totalMerged = ranked.reduce((s, c) => s + c.merged, 0);
   const data = {
     wall: { owner, repo, path: wallPath },
+    reviewLabel: REVIEW_LABEL,
     clubs: ranked,
     activity,
     totals: {
@@ -354,13 +364,14 @@ export async function GET() {
       merged: totalMerged,
       openTagged,
       openUntagged,
+      openUnlabeled,
       rejected,
     },
     fetchedAt: new Date().toISOString(),
     errors: errors.length ? errors : undefined,
   };
 
-  if (wallMd || openPRs.length || recentPulls.length) {
+  if (wallMd || labeledPRs.length || openPRs.length || recentPulls.length) {
     cache = { at: Date.now(), data };
   }
 
