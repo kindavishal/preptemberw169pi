@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { isIgnoredLogin } from '../../../../lib/ignoredLogins';
+import { ghPaginate } from '../../../../lib/ghPaginate';
 
 export const runtime = 'nodejs';
 export const revalidate = 60;
@@ -44,7 +45,8 @@ export async function GET() {
   const [starsRes, repoRes, prsRes] = await Promise.all([
     gh(`/repos/${starsOwner}/${starsRepo}`, token),
     gh(`/repos/${owner}/${repo}`, token),
-    gh(`/repos/${owner}/${repo}/pulls?state=all&per_page=100&sort=created&direction=desc`, token),
+    // Every PR, not just the newest 100 — the count and leaderboard need them all.
+    ghPaginate((p) => gh(p, token), `/repos/${owner}/${repo}/pulls?state=all&per_page=100&sort=created&direction=desc`, 10),
   ]);
 
   const errors = [];
@@ -68,10 +70,9 @@ export async function GET() {
   let recentPRs = [];
   let pulls = [];
   if (prsRes.ok) {
-    const j = await prsRes.json();
     // Ignored handles (see lib/ignoredLogins) are dropped before anything is
     // counted, so they affect neither the PR count, recent PRs nor the list.
-    pulls = (Array.isArray(j) ? j : []).filter((p) => !isIgnoredLogin(p.user?.login));
+    pulls = prsRes.items.filter((p) => !isIgnoredLogin(p.user?.login));
     prsCount = pulls.length;
     recentPRs = pulls.slice(0, 4).map((p) => ({
       user: p.user?.login || 'unknown',

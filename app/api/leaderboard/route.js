@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { clubKey, resolveClub, clubAllowsMember } from '../../../lib/clubs';
 import { isIgnoredLogin } from '../../../lib/ignoredLogins';
+import { ghPaginate } from '../../../lib/ghPaginate';
 
 export const runtime = 'nodejs';
 export const revalidate = 45;
@@ -151,21 +152,6 @@ function parseWall(markdown) {
   return { entries, handleToClub };
 }
 
-// Fetch a list endpoint across pages (GitHub caps per_page at 100), stopping at
-// the first short page or `maxPages`. Removes the old hard 100-item ceiling.
-async function ghPaginate(pathBase, token, maxPages = 4) {
-  const items = [];
-  for (let page = 1; page <= maxPages; page++) {
-    const res = await gh(`${pathBase}&page=${page}`, token);
-    if (!res.ok) return { ok: false, status: res.status, items };
-    const arr = await res.json();
-    if (!Array.isArray(arr) || arr.length === 0) break;
-    items.push(...arr);
-    if (arr.length < 100) break;
-  }
-  return { ok: true, items };
-}
-
 export async function GET() {
   const token = process.env.GITHUB_TOKEN || null;
 
@@ -186,8 +172,8 @@ export async function GET() {
   //   recent   — most recently touched PRs, for the activity feed
   const [wallRes, labeledRes, openRes, recentRes] = await Promise.all([
     gh(`/repos/${owner}/${repo}/contents/${wallPath}`, token, 'application/vnd.github.raw'),
-    ghPaginate(`/repos/${owner}/${repo}/issues?state=all&labels=${encodeURIComponent(REVIEW_LABEL)}&per_page=100&sort=created&direction=desc`, token, 10),
-    ghPaginate(`/repos/${owner}/${repo}/pulls?state=open&per_page=100&sort=created&direction=desc`, token, 4),
+    ghPaginate((p) => gh(p, token), `/repos/${owner}/${repo}/issues?state=all&labels=${encodeURIComponent(REVIEW_LABEL)}&per_page=100&sort=created&direction=desc`, 10),
+    ghPaginate((p) => gh(p, token), `/repos/${owner}/${repo}/pulls?state=open&per_page=100&sort=created&direction=desc`, 4),
     gh(`/repos/${owner}/${repo}/pulls?state=all&per_page=30&sort=updated&direction=desc`, token),
   ]);
 
